@@ -9,6 +9,7 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
 
+
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2023, 1, 1),
@@ -20,6 +21,7 @@ hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 scripts_dir = f"{Variable.get('scripts_folder')}pedigree"
 output_dir = Variable.get("output_folder")
 default_email = Variable.get("default_email")
+
 
 
 dag_params = {
@@ -56,6 +58,7 @@ def pedigree_standard_extract():
     @task(task_id="Start", provide_context=True)
     def start(**context):
         _uuid = context["params"]["uuid"]
+
         return _uuid
 
     start = start()

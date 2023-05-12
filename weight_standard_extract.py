@@ -7,6 +7,13 @@ from airflow.decorators import dag, task
 from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.models import Variable
+
+now = datetime.now()
+hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
+scripts_dir = f"{Variable.get('scripts_folder')}weight"
+output_dir = Variable.get("output_folder")
+default_email = Variable.get("default_email")
 
 default_args = {
     'owner': 'airflow',
@@ -22,10 +29,6 @@ dag_params = {
     'start_date': date.today() - timedelta(days=365),
     'end_date': date.today(),
 }
-
-output_location = "/home/kosgei/airflow/output/"
-now = datetime.now()
-hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
 
 def gen_file(df, filename, compressed_filename):
@@ -45,7 +48,7 @@ def gen_file(df, filename, compressed_filename):
     dag_id='Weights-Standard-Extract',
     start_date=datetime(2021, 1, 1),
     default_args=default_args,
-    template_searchpath=['/home/kosgei/airflow/scripts'],
+    template_searchpath=[scripts_dir],
     max_active_runs=1,
     schedule="@daily",
     catchup=False,
@@ -63,7 +66,7 @@ def etl_weight():
     stage = MySqlOperator(
         task_id='Stage-Data',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='extract_weight_data.sql',
+        sql='weight_extract_data.sql',
         params={"country": "{{ dag_run.conf['country']}}", "uuid": start,
                 "start_date": "{{ dag_run.conf['start_date']}}",
                 "end_date": "{{ dag_run.conf['end_date']}}"}
@@ -74,7 +77,7 @@ def etl_weight():
     check_heart_girth = MySqlOperator(
         task_id='Check-Heart-Girth',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_weight_data_heart_girth_check.sql',
+        sql='weight_data_heart_girth_check.sql',
         params={"uuid": start}
     )
 
@@ -82,7 +85,7 @@ def etl_weight():
     check_weight = MySqlOperator(
         task_id='Check-Weight',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_weight_data_weight_check.sql',
+        sql='weight_data_weight_check.sql',
         params={"uuid": start}
     )
 
@@ -90,7 +93,7 @@ def etl_weight():
     check_duplicates = MySqlOperator(
         task_id='Check-Duplicates',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_weight_data_check_duplicates.sql',
+        sql='weight_data_check_duplicates.sql',
         params={"uuid": start}
     )
 
@@ -98,7 +101,7 @@ def etl_weight():
     check_dates = MySqlOperator(
         task_id='Check-Dates',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_weight_data_date_check.sql',
+        sql='weight_data_date_check.sql',
         params={"uuid": start}
     )
 
@@ -106,7 +109,7 @@ def etl_weight():
     check_gps = MySqlOperator(
         task_id='Check-GPS',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_weight_data_check_gps.sql',
+        sql='weight_data_check_gps.sql',
         params={"uuid": start}
     )
 
@@ -122,14 +125,14 @@ def etl_weight():
                          'birthdate', 'main_breed', 'sex', 'animal_type', 'longitude', 'latitude', 'weight_date',
                          'age_at_weighing', 'heart_girth', 'body_weight']
 
-        valid_output_csv = f"{output_location}weight-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        valid_output_csv = f"{output_dir}weight-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
         valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE status = 1 AND uuid ='{unique_id}'"
         valid_df = hook.get_pandas_df(valid_sql_query)
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
         # Error Report
-        error_output_csv = f"{output_location}error-weight-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        error_output_csv = f"{output_dir}error-weight-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         error_output_gz = f"{error_output_csv}.gz"
         error_columns = ['country', 'region', 'district', 'ward', 'village', 'registration_date', 'animal_id', 'tag_id',
                          'birthdate', 'main_breed', 'sex', 'animal_type', 'longitude', 'latitude', 'weight_date',
