@@ -7,6 +7,13 @@ from airflow.decorators import dag, task
 from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.models import Variable
+
+now = datetime.now()
+hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
+scripts_dir = f"{Variable.get('scripts_folder')}lactation"
+output_dir = Variable.get("output_folder")
+default_email = Variable.get("default_email")
 
 default_args = {
     'owner': 'airflow',
@@ -22,10 +29,6 @@ dag_params = {
     'start_date': date.today() - timedelta(days=365),
     'end_date': date.today(),
 }
-
-output_location = "/home/kosgei/airflow/output/"
-now = datetime.now()
-hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
 
 def gen_file(df, filename, compressed_filename):
@@ -45,7 +48,7 @@ def gen_file(df, filename, compressed_filename):
     dag_id='Lactation-Standard-Extract',
     start_date=datetime(2021, 1, 1),
     default_args=default_args,
-    template_searchpath=['/home/kosgei/airflow/scripts'],
+    template_searchpath=[scripts_dir],
     max_active_runs=1,
     schedule="@daily",
     catchup=False,
@@ -63,7 +66,7 @@ def lactation_standard_extract():
     stage = MySqlOperator(
         task_id='Stage-Data',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='extract_lactation_data.sql',
+        sql='lactation_extract_data.sql',
         params={"country": "{{ dag_run.conf['country']}}", "uuid": start,
                 "start_date": "{{ dag_run.conf['start_date']}}",
                 "end_date": "{{ dag_run.conf['end_date']}}"}
@@ -73,7 +76,7 @@ def lactation_standard_extract():
     check_duplicates = MySqlOperator(
         task_id='Check-Duplicates',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_lactation_check_duplicates.sql',
+        sql='lactation_check_duplicates.sql',
         params={"uuid": start}
     )
 
@@ -81,7 +84,7 @@ def lactation_standard_extract():
     check_value_date = MySqlOperator(
         task_id='Check-Value-Date',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_lactation_check_value_date.sql',
+        sql='lactation_check_value_date.sql',
         params={"uuid": start}
     )
 
@@ -89,7 +92,7 @@ def lactation_standard_extract():
     check_calving_interval = MySqlOperator(
         task_id='Check-Calving-Interval',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_lactation_check_calving_interval.sql',
+        sql='lactation_check_calving_interval.sql',
         params={"uuid": start}
     )
 
@@ -97,7 +100,7 @@ def lactation_standard_extract():
     check_calving_age = MySqlOperator(
         task_id='Check-Calving-Age',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_lactation_check_calving_age.sql',
+        sql='lactation_check_calving_age.sql',
         params={"uuid": start}
     )
 
@@ -105,7 +108,7 @@ def lactation_standard_extract():
     check_animal_type = MySqlOperator(
         task_id='Check-Animal-Type',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_lactation_check_animal_type.sql',
+        sql='lactation_check_animal_type.sql',
         params={"uuid": start}
     )
 
@@ -123,14 +126,14 @@ def lactation_standard_extract():
                          'subsequent_calving_date', 'calving_interval', 'parity'
                          ]
 
-        valid_output_csv = f"{output_location}lactation-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        valid_output_csv = f"{output_dir}lactation-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
         valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE status = 1  AND uuid ='{unique_id}' ORDER BY animal_id, calving_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
         # Error Report
-        error_output_csv = f"{output_location}error-lactation-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        error_output_csv = f"{output_dir}error-lactation-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         error_output_gz = f"{error_output_csv}.gz"
         error_columns = ['farm_name', 'country', 'region', 'district', 'ward', 'village', 'longitude', 'latitude',
                          'animal_id', 'tag_id', 'animal_registration_date', 'main_breed', 'birthdate', 'animal_sex',
