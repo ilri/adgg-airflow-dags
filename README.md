@@ -4,7 +4,7 @@ gi# airflow-dags
 
 How to remove default example dags in airflow
 export AIRFLOW__CORE__LOAD_EXAMPLES=False
-airflow initdb
+airflow db init
 
 
 MySQL Metastore

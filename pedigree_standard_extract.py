@@ -7,6 +7,7 @@ from airflow.decorators import dag, task
 from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.models import Variable
 
 default_args = {
     'owner': 'airflow',
@@ -14,20 +15,18 @@ default_args = {
     'email_on_failure': True,
     'email_on_retry': False
 }
+now = datetime.now()
+hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
+scripts_dir = f"{Variable.get('scripts_folder')}pedigree"
+output_dir = Variable.get("output_folder")
+default_email = Variable.get("default_email")
+
 
 dag_params = {
     "uuid": str(uuid.uuid4()),
     "country": 10,
-    "email": "g.kipkosgei@cgiar.org"
+    "email": default_email
 }
-
-output_location = "/home/kosgei/airflow/output/"
-now = datetime.now()
-hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
-
-
-# sql_dir = Variable.get("sql_script_dir")
-# sql_dir_pedigree = f"{sql_dir}/pedigree"
 
 
 def gen_file(df, filename, compressed_filename):
@@ -47,7 +46,7 @@ def gen_file(df, filename, compressed_filename):
     dag_id='Pedigree-Standard-Extract',
     start_date=datetime(2021, 1, 1),
     default_args=default_args,
-    template_searchpath=['/home/kosgei/airflow/scripts/pedigree'],
+    template_searchpath=[scripts_dir],
     max_active_runs=1,
     schedule="@daily",
     catchup=False,
@@ -65,7 +64,7 @@ def pedigree_standard_extract():
     stage = MySqlOperator(
         task_id='Stage-Data',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='extract_pedigree_data.sql',
+        sql='pedigree_extract_data.sql',
         params={"country": "{{ dag_run.conf['country']}}", "uuid": start}
     )
 
@@ -73,7 +72,7 @@ def pedigree_standard_extract():
     check_duplicates = MySqlOperator(
         task_id='Check-Duplicates',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_pedigree_check_duplicates.sql',
+        sql='pedigree_check_duplicates.sql',
         params={"uuid": start}
     )
 
@@ -81,7 +80,7 @@ def pedigree_standard_extract():
     check_value_date = MySqlOperator(
         task_id='Check-Value-Date',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_pedigree_check_value_date.sql',
+        sql='pedigree_check_value_date.sql',
         params={"uuid": start}
     )
 
@@ -89,7 +88,7 @@ def pedigree_standard_extract():
     check_sex_details = MySqlOperator(
         task_id='Check-Sex-Details',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_pedigree_check_sex_details.sql',
+        sql='pedigree_check_sex_details.sql',
         params={"uuid": start}
     )
 
@@ -97,7 +96,7 @@ def pedigree_standard_extract():
     check_bisexuals = MySqlOperator(
         task_id='Check-Bisexuals',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='transform_pedigree_check_bisexuals.sql',
+        sql='pedigree_check_bisexuals.sql',
         params={"uuid": start}
     )
 
@@ -130,14 +129,14 @@ def pedigree_standard_extract():
                          'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
                          'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude']
 
-        valid_output_csv = f"{output_location}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
         valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE status = 1  AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
         # Error Report
-        error_output_csv = f"{output_location}error-pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        error_output_csv = f"{output_dir}error-pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         error_output_gz = f"{error_output_csv}.gz"
         error_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'animal_id',
                          'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
