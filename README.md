@@ -23,9 +23,10 @@ Alternatively you can go into the airflow_db and manually delete those entries f
 ## Dependencies
 pip install pandas
 pip install 'apache-airflow-providers-common-sql[pandas]'
+pip install 'apache-airflow[mysql]'
 
 ## variables
-create or upload
+create or uploads
 
 {
     "default_email": "g.kipkosgei@cgiar.org",
