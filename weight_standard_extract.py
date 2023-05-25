@@ -50,7 +50,7 @@ def gen_file(df, filename, compressed_filename):
     default_args=default_args,
     template_searchpath=[scripts_dir],
     max_active_runs=1,
-    schedule="@daily",
+    schedule=None,
     catchup=False,
     params=dag_params
 )
