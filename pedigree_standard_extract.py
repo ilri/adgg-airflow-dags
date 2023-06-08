@@ -103,6 +103,14 @@ def pedigree_standard_extract():
         params={"uuid": start}
     )
 
+    # Check Sires
+    check_sires = MySqlOperator(
+        task_id='Check-Sire',
+        mysql_conn_id='mysql_adgg_db_production',
+        sql='pedigree_check_sires.sql',
+        params={"uuid": start}
+    )
+
     #
     # # Check Calving Age
     # check_calving_age = MySqlOperator(
@@ -194,7 +202,7 @@ def pedigree_standard_extract():
         return "finish"
 
     start >> stage >> [check_duplicates, check_value_date, check_sex_details,
-                       check_bisexuals] >> reports >> email_reports() >> [
+                       check_bisexuals, check_sires] >> reports >> email_reports() >> [
         flush_data, trash_files()] >> finish()
 
 
