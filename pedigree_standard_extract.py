@@ -104,12 +104,22 @@ def pedigree_standard_extract():
     )
 
     # Check Sires
-    check_sires = MySqlOperator(
-        task_id='Check-Sire',
+    progeny_sire_dob_comparison = MySqlOperator(
+        task_id='Compare-Progeny-Sire-DOB',
         mysql_conn_id='mysql_adgg_db_production',
         sql='pedigree_check_sires.sql',
         params={"uuid": start}
     )
+
+    # Progeny Grand Sire Comparison
+    progeny_grand_sire_check = MySqlOperator(
+        task_id='Progeny-Grand-Sire-ID-Comparison',
+        mysql_conn_id='mysql_adgg_db_production',
+        sql='pedigree_check_grandsire.sql',
+        params={"uuid": start}
+    )
+
+
 
     #
     # # Check Calving Age
@@ -202,7 +212,7 @@ def pedigree_standard_extract():
         return "finish"
 
     start >> stage >> [check_duplicates, check_value_date, check_sex_details,
-                       check_bisexuals, check_sires] >> reports >> email_reports() >> [
+                       check_bisexuals, progeny_sire_dob_comparison, progeny_grand_sire_check] >> reports >> email_reports() >> [
         flush_data, trash_files()] >> finish()
 
 
