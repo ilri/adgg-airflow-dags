@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/pedigree_standard_extract.py" beforeDir="false" afterPath="$PROJECT_DIR$/pedigree_standard_extract.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="96336794-dca6-4906-ad71-42ff329505da" />
+        <option name="url" value="https://github.com/gideonkosgei/airflow-dags.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2LdcKXyG3StY8oNy4L9jBxUeI1o" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "last_opened_file_path": "/home/kosgei/airflow",
+    "settings.editor.selected.configurable": "preferences.lookFeel"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="" />
+      <created>1676204336524</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1676204336524</updated>
+    </task>
+    <task id="LOCAL-00001" summary="added a new taskflow dag &gt; first taskflow dag">
+      <created>1676215644752</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1676215644752</updated>
+    </task>
+    <task id="LOCAL-00002" summary="1.Removed DAGs With Errors&#10;2.Added Email Operator - working">
+      <created>1676960826766</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1676960826766</updated>
+    </task>
+    <task id="LOCAL-00003" summary="1. new DAG example - Mysql_1.py">
+      <created>1676971696639</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1676971696639</updated>
+    </task>
+    <task id="LOCAL-00004" summary="converted weight etl to use taskflow api">
+      <created>1680510187336</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1680510187336</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Weight data ETL">
+      <created>1680695723661</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1680695723661</updated>
+    </task>
+    <task id="LOCAL-00006" summary="pushing and pull files into xcoms&#10;using emailoperator to send success &amp; error files">
+      <created>1681142222738</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1681142222738</updated>
+    </task>
+    <task id="LOCAL-00007" summary="added check weight task">
+      <created>1681367819568</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1681367819568</updated>
+    </task>
+    <task id="LOCAL-00008" summary="added tasks:calving age, calving interval, duplicates, value dates, animal type">
+      <created>1681998176900</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1681998176900</updated>
+    </task>
+    <task id="LOCAL-00009" summary="get dir from variables">
+      <created>1683884444274</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1683884444274</updated>
+    </task>
+    <task id="LOCAL-00010" summary="weight dag -&gt; moved dirs to config">
+      <created>1683892995241</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1683892995241</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Changed schedule from @daily to None : Don’t schedule, use for exclusively “externally triggered” DAG">
+      <created>1684992308447</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1684992308447</updated>
+    </task>
+    <task id="LOCAL-00012" summary="new pedigree task -  compare sire's age">
+      <created>1686223116550</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1686223116550</updated>
+    </task>
+    <task id="LOCAL-00013" summary="New Task -&gt; progeny &amp; Grand sire ID comparison">
+      <created>1686294279139</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1686294279140</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="added a new taskflow dag &gt; first taskflow dag" />
+    <MESSAGE value="1.Removed DAGs With Errors&#10;2.Added Email Operator - working" />
+    <MESSAGE value="1. new DAG example - Mysql_1.py" />
+    <MESSAGE value="converted weight etl to use taskflow api" />
+    <MESSAGE value="Weight data ETL" />
+    <MESSAGE value="pushing and pull files into xcoms&#10;using emailoperator to send success &amp; error files" />
+    <MESSAGE value="added check weight task" />
+    <MESSAGE value="added tasks:calving age, calving interval, duplicates, value dates, animal type" />
+    <MESSAGE value="get dir from variables" />
+    <MESSAGE value="weight dag -&gt; moved dirs to config" />
+    <MESSAGE value="Changed schedule from @daily to None : Don’t schedule, use for exclusively “externally triggered” DAG" />
+    <MESSAGE value="new pedigree task -  compare sire's age" />
+    <MESSAGE value="New Task -&gt; progeny &amp; Grand sire ID comparison" />
+    <option name="LAST_COMMIT_MESSAGE" value="New Task -&gt; progeny &amp; Grand sire ID comparison" />
+  </component>
+</project>
