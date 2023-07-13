@@ -24,6 +24,8 @@ Alternatively you can go into the airflow_db and manually delete those entries f
 pip install pandas
 pip install 'apache-airflow-providers-common-sql[pandas]'
 pip install 'apache-airflow[mysql]'
+pip install reportlab 
+pip install matplotlib
 
 ## variables
 create or uploads
