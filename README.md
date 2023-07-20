@@ -40,5 +40,13 @@ create or uploads
     "daily_distribution_list": "yy@cgiar.org"    
 }
 
+## directories
+Inside the dag folder, create a directory called utilities. The utilities dir should have subdirectories below
+img  
+output  
+scripts  
+style
+
+
 
 

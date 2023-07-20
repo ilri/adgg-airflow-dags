@@ -39,7 +39,8 @@ timezone_nairobi = timezone('Africa/Nairobi')
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
+    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
+    'start_date': make_aware(datetime(2023, 7, 19), timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -68,7 +69,8 @@ pdf_options = {
 @dag(
     dag_id='Daily-Data-Report',
     default_args=default_args,
-    schedule_interval="30 07 * * 1-5",  # Monday to Friday at 8:30 AM in the specified timezone
+    schedule_interval="55 20 * * 1-5",  # Monday to Friday at 7:30 AM in the specified timezone
+    # schedule_interval="30 10 * * 1-5",  # Monday to Friday at 7:30 AM in the specified timezone
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
@@ -375,9 +377,11 @@ def daily_data_report():
             task_id='Email-Reports',
             to=recipients_email,
             subject='Daily Data Flow Report',
-            html_content="Hello, <br/> Please check the attachment to access the file extract. <br/><br/>Regards<br/> Apache Airflow",
+            html_content="Hello,<p>The daily data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the daily data report service</p><br/>Regards<br/> AADGG Data Support Services (BOT)",
             files=[daily_report_attachment]
         )
+
+
 
         return send_email_task.execute(context={})
     # Clean Transaction Tables
