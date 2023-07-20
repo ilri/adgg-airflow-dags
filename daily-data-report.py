@@ -12,7 +12,6 @@ from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import Variable
 
-
 # Import the timezone module
 from airflow.utils.timezone import make_aware
 from pytz import timezone
@@ -23,11 +22,10 @@ hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 # Get the current file's path
 current_file_path = os.path.abspath(__file__)
 dag_folder = os.path.dirname(os.path.dirname(current_file_path))
-scripts_dir = dag_folder+'/dags/utilities/scripts/reports'
-output_dir = dag_folder+'/dags/utilities/output/'
-css_file = dag_folder+'/dags/utilities/style/style.css'
-banner_img = dag_folder+'/dags/utilities/img/banner.png'
-
+scripts_dir = dag_folder + '/dags/utilities/scripts/reports'
+output_dir = dag_folder + '/dags/utilities/output/'
+css_file = dag_folder + '/dags/utilities/style/style.css'
+banner_img = dag_folder + '/dags/utilities/img/banner.png'
 
 distibution_list = Variable.get("daily_distribution_list")
 
@@ -40,7 +38,7 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    'start_date': make_aware(datetime(2023, 7, 19), timezone_nairobi),  # Use make_aware to set timezone
+    'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -59,12 +57,12 @@ dag_params = {
     "distribution-list": distibution_list
 }
 
-
 # Configure PDF options
 pdf_options = {
     'page-size': 'A4',
     'enable-local-file-access': None
 }
+
 
 @dag(
     dag_id='Daily-Data-Report',
@@ -83,7 +81,7 @@ def daily_data_report():
         _start_date = context["params"]["start_date"]
         _recipients_email = context["params"]["distribution-list"]
 
-        return _start_date,_recipients_email
+        return _start_date, _recipients_email
 
     start = start()
 
@@ -130,14 +128,13 @@ def daily_data_report():
         else:
             start_day = start_date.strftime('%A')
 
-
-        fig_data_summary = output_dir + 'fig_data_summary_plots_'+ datetime.today().strftime('%Y%m%d')+'.png'
-        report_pdf = output_dir + 'Daily-Report-'+ datetime.today().strftime('%Y%m%d')+'.pdf'
+        fig_data_summary = output_dir + 'fig_data_summary_plots_' + datetime.today().strftime('%Y%m%d') + '.png'
+        report_pdf = output_dir + 'Daily-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
         sql_data_flow = f"SELECT country ,enumerator Enumerator,event,total FROM reports.rpt_data_flow"
         df_data_flow = hook.get_pandas_df(sql_data_flow)
         df_data_flow['Enumerator'] = df_data_flow['Enumerator'].apply(lambda x: x.capitalize())
 
-        #Animal Reg Stats By Animal Type
+        # Animal Reg Stats By Animal Type
         sql_animal_stats = f"SELECT Country,Animal_type,Total FROM reports.rpt_data_flow_animal_reg"
         df_animal_stats = hook.get_pandas_df(sql_animal_stats)
 
@@ -145,14 +142,13 @@ def daily_data_report():
         sql_farm_stats = f"SELECT Country, Farm_type, Total FROM reports.rpt_data_flow_farm_reg"
         df_farm_stats = hook.get_pandas_df(sql_farm_stats)
 
-        #Milk Data
+        # Milk Data
         sql_milk_data = f"SELECT Country, Total FROM reports.rpt_data_flow_milk"
         df_milk_data = hook.get_pandas_df(sql_milk_data)
 
         # Weight Data
         sql_weight_data = f"SELECT Country, Total FROM reports.rpt_data_flow_weight"
         df_weight_data = hook.get_pandas_df(sql_weight_data)
-
 
         # Summary Of Data Recording Per country
         # df_data_flow_country_events_grouping = df_data_flow.groupby(['country', 'event']).sum().reset_index()
@@ -171,7 +167,8 @@ def daily_data_report():
 
         # Plot the bar charts using sns.barplot on each subplot
         for i, event in enumerate(unique_events):
-            sns.barplot(x='country', y='total', data=df_data_flow[df_data_flow['event'] == event],estimator=sum, errorbar=None, ax=axes[i])
+            sns.barplot(x='country', y='total', data=df_data_flow[df_data_flow['event'] == event], estimator=sum,
+                        errorbar=None, ax=axes[i])
             axes[i].set_title(f'{event}')
             axes[i].set_xlabel('Country')
             axes[i].set_ylabel('Total Records')
@@ -218,7 +215,7 @@ def daily_data_report():
 
         # Step 2: Create the pivot table with 'event' as the column header
         pvt_data_flow = melted_data_flow.pivot_table(index=['country', 'Enumerator'], columns='event', values='value',
-                                                fill_value=0)
+                                                     fill_value=0)
 
         pvt_data_flow.reset_index(inplace=True)
 
@@ -279,17 +276,19 @@ def daily_data_report():
         html_combined_ranking_rpt = html_top_5_ranked_Enumerator_rpt + "<div class ='float-clear'><br/><br/></div>" + html_bottom_5_ranked_Enumerator_rpt
 
         # animal stats
-        pvt_animal_stats = df_animal_stats.pivot_table(index='Country', columns='Animal_type', values='Total', fill_value=0)
+        pvt_animal_stats = df_animal_stats.pivot_table(index='Country', columns='Animal_type', values='Total',
+                                                       fill_value=0)
         pvt_animal_stats.reset_index(inplace=True)
-        html_animal_stats = tabulate(pvt_animal_stats, headers=pvt_animal_stats.columns, tablefmt='html',showindex=False)
-
-        # Farm Stats
-        pvt_farm_stats = df_farm_stats.pivot_table(index='Country', columns='Farm_type', values='Total',fill_value=0)
-        pvt_farm_stats.reset_index(inplace=True)
-        html_farm_stats = tabulate(pvt_farm_stats, headers=pvt_farm_stats.columns, tablefmt='html',
+        html_animal_stats = tabulate(pvt_animal_stats, headers=pvt_animal_stats.columns, tablefmt='html',
                                      showindex=False)
 
-        rpt_reg_by_type = "<br/><div class ='float-child-40'><h3>Categorized Animal Registration</h3>"+html_animal_stats+"</div><div class ='float-clear'><div class ='float-child'><h3><br/>Categorized Farmer Registration</h3>"+html_farm_stats+"</div><div class ='float-clear'><br/></div>"
+        # Farm Stats
+        pvt_farm_stats = df_farm_stats.pivot_table(index='Country', columns='Farm_type', values='Total', fill_value=0)
+        pvt_farm_stats.reset_index(inplace=True)
+        html_farm_stats = tabulate(pvt_farm_stats, headers=pvt_farm_stats.columns, tablefmt='html',
+                                   showindex=False)
+
+        rpt_reg_by_type = "<br/><div class ='float-child-40'><h3>Categorized Animal Registration</h3>" + html_animal_stats + "</div><div class ='float-clear'><div class ='float-child'><h3><br/>Categorized Farmer Registration</h3>" + html_farm_stats + "</div><div class ='float-clear'><br/></div>"
 
         # Milk stats chart
         # Group by 'Country' column
@@ -316,7 +315,7 @@ def daily_data_report():
         })
 
         html_milk_summary = tabulate(milk_summary, headers=milk_summary.columns, tablefmt='html',
-                                   showindex=False)
+                                     showindex=False)
 
         rpt_milk_summary = "<br/><div class ='float-child-50'><h3>Milk Summary</h3>" + html_milk_summary + "</div><div class ='float-clear'>"
 
@@ -344,7 +343,7 @@ def daily_data_report():
         })
 
         html_weight_summary = tabulate(weight_summary, headers=weight_summary.columns, tablefmt='html',
-                                     showindex=False)
+                                       showindex=False)
 
         rpt_weight_summary = "<br/><div class ='float-child-50'><h3>Weight Summary</h3>" + html_weight_summary + "</div><div class ='float-clear'><br/></div>"
 
@@ -356,11 +355,11 @@ def daily_data_report():
         report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_day} {start_date}</div>"
         # report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_date} - {end_date}</div>"
         # report_generated_by = "<div style ='padding: 5px;'><strong>Report Generated By</strong>: System</div><hr/>"
-        report_header = rpt_banner + "<div class ='float-child-50'>"+report_title + report_type +"</div><div class ='float-child-50'>"+ report_date + report_period+"</div> <hr/><br/"
+        report_header = rpt_banner + "<div class ='float-child-50'>" + report_title + report_type + "</div><div class ='float-child-50'>" + report_date + report_period + "</div> <hr/><br/"
 
         html_dataflow_plots = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
 
-        combined_html = report_header  + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary+rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt + html_Enumerator_activity_rpt
+        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt + html_Enumerator_activity_rpt
         pdfkit.from_string(combined_html, report_pdf, options=pdf_options, css=css_file)
 
         rpt_dict = {'subplots_file': fig_data_summary, 'report_file': report_pdf}
@@ -369,20 +368,19 @@ def daily_data_report():
     @task(task_id="Distribute-Report")
     def email_reports(**kwargs):
         xcom_values = kwargs['ti'].xcom_pull(key='files')
-        start_date,recipients_email = kwargs['ti'].xcom_pull()
+        start_date, recipients_email = kwargs['ti'].xcom_pull()
         daily_report_attachment = xcom_values['report_file']
 
         send_email_task = EmailOperator(
             task_id='Email-Reports',
             to=recipients_email,
-            subject='Daily Data Flow Report',
+            subject='Daily Data Flow Report: '+ datetime.today().strftime('%Y-%m-%d'),
             html_content="Hello,<p>The daily data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the daily data report service</p><br/>Regards<br/> AADGG Data Support Services (BOT)",
             files=[daily_report_attachment]
         )
 
-
-
         return send_email_task.execute(context={})
+
     # Clean Transaction Tables
     flush_data = MySqlOperator(
         task_id='Flush-Data',
@@ -394,7 +392,7 @@ def daily_data_report():
     def trash_files(**kwargs):
         # Get Return values of Generate-Reports Task
         xcom_values = kwargs['ti'].xcom_pull(key='files')
-        subplots_file= xcom_values['subplots_file']
+        subplots_file = xcom_values['subplots_file']
         report_file = xcom_values['report_file']
 
         # remove the original CSV file
@@ -405,7 +403,10 @@ def daily_data_report():
     def finish():
         return "finish"
 
-    start >> [extract_data_flow_report_data, extract_animals_data_by_type, extract_farms_data_by_type,extract_milk_data_by_type, extract_weight_data_by_type] >> data_flow_report() >>  email_reports() >> [flush_data, trash_files()] >> finish()
+    start >> [extract_data_flow_report_data, extract_animals_data_by_type, extract_farms_data_by_type,
+              extract_milk_data_by_type, extract_weight_data_by_type] >> data_flow_report() >> email_reports() >> [
+        flush_data, trash_files()] >> finish()
+
 
 daily_data_report()
 

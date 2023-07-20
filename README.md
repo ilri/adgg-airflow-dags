@@ -31,9 +31,8 @@ pip install seaborn
 
 sudo apt install wkhtmltopdf -> should be installed in the machine not env
 
-## variables
-
-create or uploads
+## Airflow variables
+you can create or upload for airflow ui
 
 {
     "default_email": "xx@cgiar.org",
