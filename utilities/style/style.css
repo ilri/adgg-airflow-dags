@@ -1,0 +1,75 @@
+table {
+    border-collapse: collapse;
+    font-family: sans-serif;
+    width: 95%;
+  }
+  
+table th, table td {
+    border: 1px solid #ccc;
+}
+  
+table th {
+    background-color: #f2f2f2;
+    color: #333;
+    text-align: left;
+}
+  
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+  
+table caption {
+    caption-side: bottom;
+    font-weight: bold;
+}
+
+h1, h2, h3, h4, h5, h6,div,p {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: #333;
+}
+
+.float-container {
+    padding: 20px;
+}
+
+.float-child {
+    float: left;
+    width: 30%;
+ }
+
+ .float-child-40 {
+    float: left;
+    width: 40%;
+ }
+  .float-child-50 {
+    float: left;
+    width: 50%;
+ }
+
+ .float-clear {
+    clear: both;
+ }
+
+
+@page {
+    size: A4 portrait;
+ }
+
+.landscape {
+    page: landscape;
+ }
+
+ h5 {
+     padding-top: 50px;
+     font-size: 25px;
+     font-family: cursive;
+ }
+
+.page-break-before {
+    page-break-before: always;
+  }
+
+.page-break-after {
+    page-break-after: always;
+}
+

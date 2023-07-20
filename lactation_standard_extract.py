@@ -11,8 +11,11 @@ from airflow.models import Variable
 
 now = datetime.now()
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
-scripts_dir = f"{Variable.get('scripts_folder')}lactation"
-output_dir = Variable.get("output_folder")
+
+current_file_path = os.path.abspath(__file__)
+dag_folder = os.path.dirname(os.path.dirname(current_file_path))
+scripts_dir = dag_folder+'/dags/utilities/scripts/lactation'
+output_dir = dag_folder+'/dags/utilities/output/'
 default_email = Variable.get("default_email")
 
 default_args = {

@@ -26,14 +26,18 @@ pip install 'apache-airflow-providers-common-sql[pandas]'
 pip install 'apache-airflow[mysql]'
 pip install reportlab 
 pip install matplotlib
+pip install pdfkit
+pip install seaborn
+
+sudo apt install wkhtmltopdf -> should be installed in the machine not env
 
 ## variables
+
 create or uploads
 
 {
-    "default_email": "g.kipkosgei@cgiar.org",
-    "output_folder": "/home/gkipkosgei/airflow/output/",
-    "scripts_folder": "/home/gkipkosgei/airflow/scripts/"
+    "default_email": "xx@cgiar.org",
+    "daily_distribution_list": "yy@cgiar.org"    
 }
 
 

@@ -19,10 +19,18 @@ from pytz import timezone
 
 now = datetime.now()
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
-scripts_dir = f"{Variable.get('scripts_folder')}reports"
-output_dir = Variable.get("output_folder")
+
+# Get the current file's path
+current_file_path = os.path.abspath(__file__)
+dag_folder = os.path.dirname(os.path.dirname(current_file_path))
+scripts_dir = dag_folder+'/dags/utilities/scripts/reports'
+output_dir = dag_folder+'/dags/utilities/output/'
+css_file = dag_folder+'/dags/utilities/style/style.css'
+banner_img = dag_folder+'/dags/utilities/img/banner.png'
+
+
 distibution_list = Variable.get("daily_distribution_list")
-css_file = f"{Variable.get('styles_folder')}style.css"
+
 sns.set_theme(style="white")
 
 # Define the timezone
@@ -31,7 +39,7 @@ timezone_nairobi = timezone('Africa/Nairobi')
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': make_aware(datetime.now(), timezone_nairobi),  # Use make_aware to set timezone
+    'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -70,6 +78,7 @@ pdf_options = {
 def daily_data_report():
     @task(task_id="Start", provide_context=True)
     def start(**context):
+
         _start_date = context["params"]["start_date"]
         _recipients_email = context["params"]["distribution-list"]
 
@@ -338,11 +347,8 @@ def daily_data_report():
 
         rpt_weight_summary = "<br/><div class ='float-child-50'><h3>Weight Summary</h3>" + html_weight_summary + "</div><div class ='float-clear'><br/></div>"
 
-        # start_date = kwargs['dag_run'].conf['start_date']
-
-
         # Report Header + Title
-        rpt_banner = "<div style ='padding: 5px;'><img src='/home/kosgei/airflow/misc/img/banner.png'/></div><hr/>"
+        rpt_banner = f"<div style ='padding: 5px;'><img src='{banner_img}'/></div><hr/>"
         report_title = "<div style ='padding: 5px;'><strong>Title</strong>: Data Report</div>"
         report_type = "<div style ='padding: 5px;'><strong>Report Type</strong>: Daily</div>"
         report_date = f"<div style ='padding: 5px;'><strong>Report Date</strong>: {now.strftime('%Y-%m-%d')}</div>"
