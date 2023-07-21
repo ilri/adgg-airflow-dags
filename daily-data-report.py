@@ -37,7 +37,7 @@ sns.set_theme(style="white")
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2023, 7, 21),
+    'start_date': datetime(2023, 7, 20),
     'retries': 1,
     # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
@@ -68,7 +68,7 @@ pdf_options = {
 @dag(
     dag_id='Daily-Data-Report',
     default_args=default_args,
-    schedule_interval="0 8 * * 1-5",  # Monday to Friday at 7:30 AM in the specified timezone
+    schedule_interval="10 8 * * 1-5",  # Monday to Friday at 7:30 AM in the specified timezone
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
