@@ -13,8 +13,8 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import Variable
 
 # Import the timezone module
-from airflow.utils.timezone import make_aware
-from pytz import timezone
+# from airflow.utils.timezone import make_aware
+# from pytz import timezone
 
 now = datetime.now()
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
@@ -32,13 +32,14 @@ distibution_list = Variable.get("daily_distribution_list")
 sns.set_theme(style="white")
 
 # Define the timezone
-timezone_nairobi = timezone('Africa/Nairobi')
+# timezone_nairobi = timezone('Africa/Nairobi')
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
+    'start_date': datetime(2023, 7, 21),
+    'retries': 1,
     # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -375,7 +376,7 @@ def daily_data_report():
             task_id='Email-Reports',
             to=recipients_email,
             subject='Daily Data Flow Report: '+ datetime.today().strftime('%Y-%m-%d'),
-            html_content="Hello,<p>The daily data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the daily data report service</p><br/>Regards<br/> AADGG Data Support Services (BOT)",
+            html_content="Hello,<p>The daily data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the daily data report service</p><br/>Regards<br/> Apache Airflow",
             files=[daily_report_attachment]
         )
 
