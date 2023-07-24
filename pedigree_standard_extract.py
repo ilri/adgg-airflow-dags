@@ -8,7 +8,7 @@ from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
-
+from airflow.models.param import Param
 
 default_args = {
     'owner': 'airflow',
@@ -21,8 +21,8 @@ hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
 current_file_path = os.path.abspath(__file__)
 dag_folder = os.path.dirname(os.path.dirname(current_file_path))
-scripts_dir = dag_folder+'/dags/utilities/scripts/pedigree'
-output_dir = dag_folder+'/dags/utilities/output/'
+scripts_dir = dag_folder + '/dags/utilities/scripts/pedigree'
+output_dir = dag_folder + '/dags/utilities/output/'
 default_email = Variable.get("default_email")
 
 dag_params = {
@@ -120,8 +120,6 @@ def pedigree_standard_extract():
         params={"uuid": start}
     )
 
-
-
     #
     # # Check Calving Age
     # check_calving_age = MySqlOperator(
@@ -213,7 +211,8 @@ def pedigree_standard_extract():
         return "finish"
 
     start >> stage >> [check_duplicates, check_value_date, check_sex_details,
-                       check_bisexuals, progeny_sire_dob_comparison, progeny_grand_sire_check] >> reports >> email_reports() >> [
+                       check_bisexuals, progeny_sire_dob_comparison,
+                       progeny_grand_sire_check] >> reports >> email_reports() >> [
         flush_data, trash_files()] >> finish()
 
 
