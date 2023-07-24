@@ -26,7 +26,7 @@ scripts_dir = dag_folder + '/dags/utilities/scripts/reports'
 output_dir = dag_folder + '/dags/utilities/output/'
 css_file = dag_folder + '/dags/utilities/style/style.css'
 banner_img = dag_folder + '/dags/utilities/img/banner.png'
-distibution_list = Variable.get("weekly_distribution_list")
+distibution_list = Variable.get("monthly_distribution_list")
 
 sns.set_theme(style="white")
 
@@ -42,29 +42,14 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
-
-def get_last_friday():
+def get_previous_month_dates():
     today = datetime.today()
-    days_until_friday = (today.weekday() - 4) % 7
-    last_friday = today - timedelta(days=days_until_friday)
-    # Check if last_friday is equal to today (which means today is a Friday)
-    # If today is a Friday, then we want to get the Friday of the previous week
-    if last_friday == today:
-        last_friday -= timedelta(weeks=1)
-    return last_friday.date()
+    first_day_of_current_month = today.replace(day=1)
+    last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+    first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
+    return first_day_of_previous_month.date(), last_day_of_previous_month.date()
 
-def get_last_monday():
-    today = datetime.today()
-    days_until_monday = (today.weekday() - 0) % 7
-    last_monday = today - timedelta(days=days_until_monday)
-    # Check if last_monday is equal to today (which means today is a Friday)
-    # If today is a Monday, then we want to get the Friday of the previous week
-    if last_monday == today:
-        last_monday -= timedelta(weeks=1)
-    return last_monday.date()
-
-start_date = get_last_monday()
-end_date = get_last_friday()
+start_date, end_date = get_previous_month_dates()
 
 dag_params = {
     'start_date': start_date,
@@ -79,15 +64,15 @@ pdf_options = {
 }
 
 @dag(
-    dag_id='Weekly-Data-Report',
+    dag_id='Monthly-Data-Report',
     default_args=default_args,
-    schedule_interval="30 4 * * 1",  # Every Monday at 7:30 AM
+    schedule_interval="0 5 * * 1",  # First Day Of The Month at 8:00 AM
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
     params=dag_params
 )
-def weekly_data_report():
+def monthly_data_report():
     @task(task_id="Start", provide_context=True)
     def start(**context):
 
@@ -134,15 +119,20 @@ def weekly_data_report():
 
         start_date, recipients_email = kwargs['ti'].xcom_pull()
 
-        week_number = 0
+        month_and_year = ""
         if isinstance(start_date, str):
             date_object = datetime.strptime(start_date, '%Y-%m-%d')
-            week_number = date_object.strftime("%U")
+            month = date_object.strftime("%B")  # Full month name (e.g., January, February)
+            year = date_object.strftime("%Y")  # Year with century as a decimal number
+            month_and_year = f"{month} {year}"
+
         else:
-            week_number = start_date.strftime("%U")
+            month = start_date.strftime("%B")  # Full month name (e.g., January, February)
+            year = start_date.strftime("%Y")  # Year with century as a decimal number
+            month_and_year = f"{month} {year}"
 
         fig_data_summary = output_dir + 'fig_data_summary_plots_' + datetime.today().strftime('%Y%m%d') + '.png'
-        report_pdf = output_dir + 'Weekly-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
+        report_pdf = output_dir + 'Monthly-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
         sql_data_flow = f"SELECT country ,enumerator Enumerator,event,total FROM reports.rpt_data_flow"
         df_data_flow = hook.get_pandas_df(sql_data_flow)
         df_data_flow['Enumerator'] = df_data_flow['Enumerator'].apply(lambda x: x.capitalize())
@@ -163,15 +153,12 @@ def weekly_data_report():
         sql_weight_data = f"SELECT Country, Total FROM reports.rpt_data_flow_weight"
         df_weight_data = hook.get_pandas_df(sql_weight_data)
 
-        # Summary Of Data Recording Per country
-        # df_data_flow_country_events_grouping = df_data_flow.groupby(['country', 'event']).sum().reset_index()
         # Get unique event names
 
         unique_events = df_data_flow['event'].unique()
         # Calculate the number of rows required for subplots
         num_rows = (len(unique_events) + 2) // 3  # Ceiling division
 
-        # Create subplots using matplotlib
         # Create subplots using matplotlib
         fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(12, 4 * num_rows))
 
@@ -363,9 +350,9 @@ def weekly_data_report():
         # Report Header + Title
         rpt_banner = f"<div style ='padding: 5px;'><img src='{banner_img}'/></div><hr/>"
         report_title = "<div style ='padding: 5px;'><strong>Title</strong>: Data Report</div>"
-        report_type = "<div style ='padding: 5px;'><strong>Report Type</strong>: Weekly</div>"
+        report_type = "<div style ='padding: 5px;'><strong>Report Type</strong>: Monthly</div>"
         report_date = f"<div style ='padding: 5px;'><strong>Report Date</strong>: {now.strftime('%Y-%m-%d')}</div>"
-        report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_date} to {end_date} (week {week_number})</div>"
+        report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_date} to {end_date} ({month_and_year})</div>"
 
         report_header = rpt_banner + "<div class ='float-child-50'>" + report_title + report_type + "</div><div class ='float-child-50'>" + report_date + report_period + "</div> <hr/><br/"
 
@@ -383,11 +370,21 @@ def weekly_data_report():
         start_date, recipients_email = kwargs['ti'].xcom_pull()
         report_attachment = xcom_values['report_file']
 
+        if isinstance(start_date, str):
+            date_object = datetime.strptime(start_date, '%Y-%m-%d')
+            month = date_object.strftime("%B")  # Full month name (e.g., January, February)
+            year = date_object.strftime("%Y")  # Year with century as a decimal number
+            month_and_year = f"{month} {year}"
+        else:
+            month = start_date.strftime("%B")  # Full month name (e.g., January, February)
+            year = start_date.strftime("%Y")  # Year with century as a decimal number
+            month_and_year = f"{month} {year}"
+
         send_email_task = EmailOperator(
             task_id='Email-Reports',
             to=recipients_email,
-            subject='Weekly Data Flow Report: '+ datetime.today().strftime('%Y-%m-%d'),
-            html_content="Hello,<p>The weekly data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the weekly data report service</p><br/>Regards<br/> Apache Airflow",
+            subject='Monthly Data Flow Report: '+ month_and_year,
+            html_content="Hello,<p>The monthly data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the monthly data report service</p><br/>Regards<br/> Apache Airflow",
             files=[report_attachment]
         )
 
@@ -420,4 +417,4 @@ def weekly_data_report():
         flush_data, trash_files()] >> finish()
 
 
-weekly_data_report()
+monthly_data_report()
