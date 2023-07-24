@@ -8,7 +8,7 @@ from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
-from airflow.models.param import Param
+
 
 default_args = {
     'owner': 'airflow',

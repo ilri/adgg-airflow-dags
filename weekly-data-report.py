@@ -81,7 +81,7 @@ pdf_options = {
 @dag(
     dag_id='Weekly-Data-Report',
     default_args=default_args,
-    schedule_interval="32 7 * * 1",  # Monday to Friday at 7:30 AM in the specified timezone
+    schedule_interval="30 4 * * 1",  # Monday to Friday at 7:30 AM in the specified timezone
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
