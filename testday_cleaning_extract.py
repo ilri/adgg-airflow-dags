@@ -126,13 +126,13 @@ with DAG('report_generation_dag',
          description='DAG to generate the report',
          schedule_interval=None,  # set to ensure DAG is run manually
          catchup=False) as dag:
-    start_task_operator = PythonOperator(
+    start = PythonOperator(
         task_id='start_task',
         python_callable=start_task,
         dag=dag,
     )
 
-    milk_report_generator_operator = PythonOperator(
+    testday_lactation_report_generator = PythonOperator(
         task_id='generate_report',
         python_callable=report_generate_task,
         provide_context=True,
@@ -142,17 +142,17 @@ with DAG('report_generation_dag',
         dag=dag,
     )
 
-    email_task_operator = PythonOperator(
+    send_email = PythonOperator(
         task_id='send_email',
         python_callable=send_email_with_attachment,
         provide_context=True,
         dag=dag,
     )
 
-    finish_task_operator = PythonOperator(
+    finish = PythonOperator(
         task_id='finish_task',
         python_callable=finish_task,
         dag=dag,
     )
 
-    start_task_operator >> milk_report_generator_operator >> email_task_operator >> finish_task_operator
+    start >> testday_lactation_report_generator >> send_email >> finish
