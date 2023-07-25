@@ -1,5 +1,4 @@
 import os
-import sys
 import zipfile
 import uuid
 from airflow import DAG
@@ -9,21 +8,21 @@ from datetime import datetime, timedelta
 from airflow.utils.email import send_email
 from airflow.models import TaskInstance
 
-# airflow variables set scripts_folder example: /Users/mirierimogaka/airflow/scripts
-# airflow variables set default_email example: example@example.com
-base_scripts_folder = Variable.get("scripts_folder")
-parent_dir = os.path.dirname(base_scripts_folder)
-sys.path.insert(0, parent_dir)
+current_file_path = os.path.abspath(__file__)
+dag_folder = os.path.dirname(os.path.dirname(current_file_path))
+scripts_dir = dag_folder + '/dags/utilities/scripts/testdaylactation/'
+output_dir = dag_folder + '/dags/utilities/output/'
 
 from utilities.scripts.testdaylactation.milk_report_generator import MilkReportGenerator
 from utilities.scripts.testdaylactation.milk_report_generator import DatabaseManager
 
 
 def report_generate_task(country_name, **kwargs):
-    db_manager = DatabaseManager(connection_id="adgg_production")
+    db_manager = DatabaseManager(connection_id="mysql_adgg_db_production")
     db_manager.connect_to_database()
 
-    report_generator = MilkReportGenerator(db_manager=db_manager, country_name=country_name)
+    report_generator = MilkReportGenerator(db_manager=db_manager, country_name=country_name, scripts_dir=scripts_dir,
+                                           output_dir=output_dir)
     filename = os.path.basename(report_generator.main())
     current_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
 
@@ -31,7 +30,7 @@ def report_generate_task(country_name, **kwargs):
     unique_identifier = str(uuid.uuid4())[:3]  # Use first 8 characters of the UUID
     unique_filename = f"{filename}_{unique_identifier}_{current_time}.zip"
 
-    output_dir = Variable.get("output_folder")
+    # output_dir = Variable.get("output_folder")
     zip_filename = os.path.join(output_dir, unique_filename)
 
     with zipfile.ZipFile(zip_filename, 'w') as zipf:
@@ -78,7 +77,6 @@ def clear_output_directory(**context):
 def send_email_with_attachment(**context):
     ti = TaskInstance(context['task'], context['execution_date'])
     file_to_send = ti.xcom_pull(task_ids='generate_report', key='zip_filename')
-    # result_data = ti.xcom_pull(task_ids='generate_report', key='result_data')
     email_to_send = context['dag_run'].conf['email']
     country_name = context['dag_run'].conf['country_name']
     current_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
