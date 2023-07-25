@@ -261,7 +261,7 @@ class MilkReportGenerator:
 
 
 if __name__ == '__main__':
-    hook = MySqlHook(mysql_conn_id='adgg_production')
+    hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
     scripts_dir = f"{Variable.get('scripts_folder')}testdaylactation"
     output_dir = Variable.get("output_folder")
     default_email = Variable.get("default_email")
