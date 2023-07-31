@@ -148,6 +148,7 @@ with DAG('milk_report_generation_dag',
         task_id='send_email',
         python_callable=send_email_with_attachment_task,
         provide_context=True,
+        op_kwargs=dag_params,
         dag=dag,
     )
 
