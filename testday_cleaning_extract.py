@@ -109,11 +109,16 @@ def send_email_with_attachment_task(**context):
 
 default_email = Variable.get("default_email")
 
+dag_params = {
+    'email': default_email,
+    "country_name": "Tanzania",
+}
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2022, 1, 1),
-    'email': [default_email],
+    'params': dag_params,
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 1,
