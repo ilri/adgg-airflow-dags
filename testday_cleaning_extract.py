@@ -8,13 +8,14 @@ from datetime import datetime, timedelta
 from airflow.utils.email import send_email
 from airflow.models import TaskInstance
 
-current_file_path = os.path.abspath(__file__)
-dag_folder = os.path.dirname(os.path.dirname(current_file_path))
-scripts_dir = dag_folder + '/dags/utilities/scripts/testdaylactation/'
-output_dir = dag_folder + '/dags/utilities/output/'
-
+from utilities.scripts.testdaylactation.database_manager import DatabaseManager
 from utilities.scripts.testdaylactation.milk_report_generator import MilkReportGenerator
-from utilities.scripts.testdaylactation.milk_report_generator import DatabaseManager
+
+# Get the directory of the current DAG file
+dag_folder = os.path.dirname(os.path.abspath(__file__))
+# Define the paths for scripts and output directories
+scripts_dir = os.path.join(dag_folder, 'utilities', 'scripts', 'testdaylactation')
+output_dir = os.path.join(dag_folder, 'utilities', 'output')
 
 
 def report_generate_task(country_name, **kwargs):
@@ -74,7 +75,7 @@ def clear_output_directory(**context):
         print(f'No file found at {file_to_delete}, skipping deletion.')
 
 
-def send_email_with_attachment(**context):
+def send_email_with_attachment_task(**context):
     ti = TaskInstance(context['task'], context['execution_date'])
     file_to_send = ti.xcom_pull(task_ids='generate_report', key='zip_filename')
     email_to_send = context['dag_run'].conf['email']
@@ -119,7 +120,7 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
-with DAG('report_generation_dag',
+with DAG('milk_report_generation_dag',
          default_args=default_args,
          description='DAG to generate the report',
          schedule_interval=None,  # set to ensure DAG is run manually
@@ -140,9 +141,9 @@ with DAG('report_generation_dag',
         dag=dag,
     )
 
-    send_email = PythonOperator(
+    send_email_task = PythonOperator(
         task_id='send_email',
-        python_callable=send_email_with_attachment,
+        python_callable=send_email_with_attachment_task,
         provide_context=True,
         dag=dag,
     )
@@ -153,4 +154,4 @@ with DAG('report_generation_dag',
         dag=dag,
     )
 
-    start >> testday_lactation_report_generator >> send_email >> finish
+    start >> testday_lactation_report_generator >> send_email_task >> finish

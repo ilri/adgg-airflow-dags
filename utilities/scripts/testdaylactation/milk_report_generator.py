@@ -5,10 +5,11 @@ import zipfile
 from datetime import datetime
 from time import sleep
 from tqdm import tqdm
-from .database_manager import DatabaseManager
+
 from mysql.connector import errors
-from airflow.providers.mysql.hooks.mysql import MySqlHook
 from collections import defaultdict
+
+from .database_manager import DatabaseManager
 
 
 class MilkReportGenerator:
@@ -18,8 +19,6 @@ class MilkReportGenerator:
         self.country_name = country_name
         self.scripts_dir = scripts_dir
         self.output_dir = output_dir
-        self.hook = MySqlHook(mysql_conn_id='adgg_production')
-        self.cursor = self.db_manager.get_cursor()
         self.reverse_country_dict = {v: k for k, v in self.country_dict.items()}
         if country_name not in self.reverse_country_dict:
             raise ValueError(f"Provided country name '{country_name}' does not exist in the country dictionary.")
@@ -163,7 +162,8 @@ class MilkReportGenerator:
                 """
         data = self.db_manager.fetch_data(final_report_query)
         weight_data = self.db_manager.fetch_data(weight_query)
-        df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned',
+        df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
+                                             'cattletotalowned',
                                              'tag_id', 'MilkAM', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'Weight', 'EstimatedWt', 'Bodyscore'])
@@ -189,7 +189,7 @@ class MilkReportGenerator:
     def write_to_csv(self, df_sql):
         country_name = self.country_dict.get(self.country_id, "unknown_country")
         filename = f"{country_name}_testday_lactation_combined_output.csv"
-        filename = os.path.join(output_dir, filename)
+        filename = os.path.join(self.output_dir, filename)
         df_sql.to_csv(filename, index=False, encoding='utf-8-sig')
         return filename
 
@@ -227,12 +227,16 @@ class MilkReportGenerator:
 
 
 if __name__ == '__main__':
-    hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
-    current_file_path = os.path.abspath(__file__)
-    dag_folder = os.path.dirname(os.path.dirname(current_file_path))
-    scripts_dir = dag_folder + '/dags/utilities/scripts/reports'
-    output_dir = dag_folder + '/dags/utilities/output/'
-    db_manager = DatabaseManager(connection_id=hook.connection)
+    db_manager = DatabaseManager(connection_id="mysql_adgg_db_production")
+
+    # Get the directory of the current DAG file
+    dag_folder = os.path.dirname(os.path.abspath(__file__))
+
+    # Define the paths for scripts and output directories
+    scripts_dir = os.path.join(dag_folder, 'utilities', 'scripts', 'testdaylactation')
+    output_dir = os.path.join(dag_folder, 'utilities', 'output')
+
     country_name = input("Please enter the country name: ")
-    report_gen = MilkReportGenerator(db_manager=db_manager, country_name=country_name)
+    report_gen = MilkReportGenerator(database_manager=db_manager, country_name=country_name, scripts_dir=scripts_dir,
+                                     output_dir=output_dir)
     report_gen.main()
