@@ -140,9 +140,7 @@ with DAG('milk_report_generation_dag',
         task_id='generate_report',
         python_callable=report_generate_task,
         provide_context=True,
-        op_kwargs={
-            'country_name': '{{ dag_run.conf["country_name"] }}',
-        },
+        op_kwargs=dag_params,
         dag=dag,
     )
 
