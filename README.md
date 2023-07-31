@@ -28,6 +28,9 @@ pip install reportlab
 pip install matplotlib
 pip install pdfkit
 pip install seaborn
+pip install tqdm
+pip install mysql-connector-python
+
 
 sudo apt install wkhtmltopdf -> should be installed in the machine not env
 
