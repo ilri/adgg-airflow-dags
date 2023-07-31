@@ -109,11 +109,16 @@ def send_email_with_attachment_task(**context):
 
 default_email = Variable.get("default_email")
 
+dag_params = {
+    'email': default_email,
+    "country_name": "Tanzania",
+}
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2022, 1, 1),
-    'email': [default_email],
+    'params': dag_params,
     'email_on_failure': True,
     'email_on_retry': True,
     'retries': 1,
@@ -135,9 +140,7 @@ with DAG('milk_report_generation_dag',
         task_id='generate_report',
         python_callable=report_generate_task,
         provide_context=True,
-        op_kwargs={
-            'country_name': '{{ dag_run.conf["country_name"] }}',
-        },
+        op_kwargs=dag_params,
         dag=dag,
     )
 
@@ -145,6 +148,7 @@ with DAG('milk_report_generation_dag',
         task_id='send_email',
         python_callable=send_email_with_attachment_task,
         provide_context=True,
+        op_kwargs=dag_params,
         dag=dag,
     )
 
