@@ -43,7 +43,7 @@ def report_generate_task(**kwargs):
 
     # Generate a unique identifier using uuid module
     unique_identifier = str(uuid.uuid4())[:3]  # Use first 8 characters of the UUID
-    unique_filename = f"{country_name}_{filename}_{unique_identifier}_{current_time}.zst"
+    unique_filename = f"{country_name}_{filename}_{unique_identifier}_{current_time}.zip"
 
     original_file_path = os.path.join(output_dir, filename)
     zip_file_path = os.path.join(output_dir, unique_filename)
