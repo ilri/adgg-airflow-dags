@@ -1,28 +1,21 @@
 import pandas as pd
 import os
-import zipfile
 
 from datetime import datetime
 from time import sleep
 from tqdm import tqdm
-
-from mysql.connector import errors
 from collections import defaultdict
-
 from .database_manager import DatabaseManager
+from mysql.connector import errors
 
 
+# new
 class MilkReportGenerator:
     def __init__(self, db_manager, country_name, scripts_dir, output_dir):
         self.db_manager = db_manager
-        self.country_dict = self.db_manager.get_country_dict()
-        self.country_name = country_name
         self.scripts_dir = scripts_dir
         self.output_dir = output_dir
-        self.reverse_country_dict = {v: k for k, v in self.country_dict.items()}
-        if country_name not in self.reverse_country_dict:
-            raise ValueError(f"Provided country name '{country_name}' does not exist in the country dictionary.")
-        self.country_id = self.reverse_country_dict[country_name]
+        self.country_name = country_name
 
     def fetch_data(self, query):
         attempts = 0
@@ -58,7 +51,7 @@ class MilkReportGenerator:
             FROM core_animal animal
             JOIN core_farm farm ON animal.farm_id = farm.id
             LEFT JOIN core_animal_event evnt ON animal.id = evnt.animal_id
-            WHERE farm.country_id = {self.country_id} AND evnt.event_type = 1 
+            WHERE farm.country_id = {self.country_name} AND evnt.event_type = 1 
             ORDER BY animal.id) g
         WHERE (g.calving_interval IS NULL OR g.calving_interval >= 220) 
         """
@@ -74,7 +67,7 @@ class MilkReportGenerator:
         FROM core_animal_event evnt 
         JOIN core_animal anim ON evnt.animal_id = anim.id
         JOIN core_farm farm ON anim.farm_id = farm.id
-        WHERE (evnt.event_type = 2 and evnt.country_id = {self.country_id})
+        WHERE (evnt.event_type = 2 and evnt.country_id = {self.country_name})
         GROUP BY anim.farm_id, evnt.animal_id, anim.tag_id, evnt.event_date, evnt.id
         HAVING COUNT(DISTINCT evnt.event_date) = 1 
         """
@@ -145,12 +138,12 @@ class MilkReportGenerator:
                 FROM core_animal_event
                     INNER JOIN core_animal on core_animal_event.animal_id = core_animal.id
                     INNER JOIN core_farm on core_animal.farm_id = core_farm.id
-                    INNER JOIN country_units region ON core_animal.region_id = region.id
-                    INNER JOIN country_units district ON core_animal.district_id = district.id
-                    INNER JOIN country_units ward ON core_animal.ward_id = ward.id
-                    INNER JOIN country_units village ON core_animal.village_id = village.id
+                    LEFT JOIN country_units region ON core_animal.region_id = region.id
+                    LEFT JOIN country_units district ON core_animal.district_id = district.id
+                    LEFT JOIN country_units ward ON core_animal.ward_id = ward.id
+                    LEFT JOIN country_units village ON core_animal.village_id = village.id
                     LEFT JOIN core_master_list gender on core_farm.gender_code = gender.value and gender.list_type_id = 3
-                WHERE core_animal.country_id = {self.country_id}
+                WHERE core_animal.country_id = {self.country_name}
                 """
         weight_query = f"""
                 SELECT
@@ -158,7 +151,7 @@ class MilkReportGenerator:
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."136"')) AS Weight,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."529"')) AS EstimatedWt,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."139"')) AS Bodyscore
-                FROM core_animal_event where event_type = 6 AND core_animal_event.country_id = {self.country_id}
+                FROM core_animal_event where event_type = 6 AND core_animal_event.country_id = {self.country_name}
                 """
         data = self.db_manager.fetch_data(final_report_query)
         weight_data = self.db_manager.fetch_data(weight_query)
@@ -173,7 +166,7 @@ class MilkReportGenerator:
         df_sql = report_testday_lacation_df.merge(df_sql, left_on='event_id', right_on='event_id', how='inner')
         df_sql = weight_data_df.merge(df_sql, left_on='animal_id', right_on='animal_id', how='right')
         # Filter data as needed
-        df_sql['milkdate'] = pd.to_datetime(df_sql['milkdate'])
+        df_sql['milkdate'] = pd.to_datetime(df_sql['milkdate'], errors='coerce')
         df_sql['closest_calvdate'] = pd.to_datetime(df_sql['closest_calvdate'])
         df_sql['Days In Milk'] = (df_sql['milkdate'] - df_sql['closest_calvdate']).dt.days
         df_sql = df_sql[df_sql['Days In Milk'] >= 0]
@@ -187,26 +180,10 @@ class MilkReportGenerator:
         return df_sql
 
     def write_to_csv(self, df_sql):
-        country_name = self.country_dict.get(self.country_id, "unknown_country")
-        filename = f"{country_name}_testday_lactation_combined_output.csv"
+        filename = f"testday_lactation_combined_output.csv"
         filename = os.path.join(self.output_dir, filename)
         df_sql.to_csv(filename, index=False, encoding='utf-8-sig')
         return filename
-
-    @staticmethod
-    def create_zip(filename):
-        # Check if the file exists
-        if not os.path.isfile(filename):
-            print(f"Error: file '{filename}' not found. Unable to create zip file.")
-            return None
-        # If the file exists, create a zip file
-        zipname = filename.replace('.csv', '.zip')
-        with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            # Add file with just its basename (avoiding directory structure)
-            zipf.write(filename, arcname=os.path.basename(filename))
-        # Remove the original CSV file
-        os.remove(filename)
-        return zipname
 
     def main(self):
         # Fetch raw data
@@ -218,12 +195,8 @@ class MilkReportGenerator:
         result_data = self.fetch_and_merge_data(processed_data)
         # Write data to csv
         filename = self.write_to_csv(result_data)
-        # Create a zip file from the CSV file
-        zip_filename = self.create_zip(filename)
-        # Provide the absolute path of the zip file.
-        zip_file_path = os.path.abspath(zip_filename)
-        # print(result_data.columns)
-        return zip_file_path
+
+        return filename
 
 
 if __name__ == '__main__':
