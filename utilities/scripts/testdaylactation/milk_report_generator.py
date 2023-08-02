@@ -129,6 +129,7 @@ class MilkReportGenerator:
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')) as MilkAM,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."61"')) as MilkPM,
                     (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')), 0) + 
+                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."68"')), 0) + 
                     COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."61"')), 0)) as TotalMilk,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."63"')) as MilkFat,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."64"')) as MilkProt,
