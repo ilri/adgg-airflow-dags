@@ -298,13 +298,11 @@ def monthly_data_report():
         milk_std_deviation = df_milk_data_grouped['Total'].std()
         milk_median = df_milk_data_grouped['Total'].median()
         milk_average = df_milk_data_grouped['Total'].mean()
-        milk_summation = df_milk_data_grouped['Total'].sum()
 
         # Create a new DataFrame with the results
         milk_summary = pd.DataFrame({
             'Country': milk_count.index,
             'Count': milk_count,
-            'Sum': milk_summation,
             'Max': milk_maximum,
             'Min': milk_minimum,
             'Median': milk_median,
@@ -326,13 +324,11 @@ def monthly_data_report():
         weight_std_deviation = df_weight_data_grouped['Total'].std()
         weight_median = df_weight_data_grouped['Total'].median()
         weight_average = df_weight_data_grouped['Total'].mean()
-        weight_summation = df_weight_data_grouped['Total'].sum()
 
         # Create a new DataFrame with the results
         weight_summary = pd.DataFrame({
             'Country': weight_count.index,
             'Count': weight_count,
-            'Sum': weight_summation,
             'Max': weight_maximum,
             'Min': weight_minimum,
             'Median': weight_median,
