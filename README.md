@@ -49,6 +49,21 @@ output
 scripts  
 style
 
+## log rotation Settings
+in your Airflow configuration file (airflow.cfg), you can set up log rotation settings to control the behavior of log files. Here are some relevant configuration options:
+log_retention_days: Specify the number of days to retain log files. Old log files beyond this retention period will be deleted.
+log_rotation_interval: Set the interval at which log files should be rotated. This interval could be based on time (e.g., daily, hourly) or log size (e.g., every 100 MB).
+log_file_max_size: Define the maximum size for individual log files. When a log file exceeds this size, a new one is created.
+
+Example
+
+[scheduler]
+log_retention_days = 30
+log_rotation_interval = 1 D
+log_file_max_size = 100000000 # 100 MB
+
+
+
 
 
 

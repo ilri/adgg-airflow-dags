@@ -62,7 +62,8 @@ pdf_options = {
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
-    params=dag_params
+    params=dag_params,
+    access_control = {'Admin':['can_dag_read','can_dag_edit']}
 )
 def data_report():
     @task(task_id="Start", provide_context=True)
