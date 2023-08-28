@@ -176,7 +176,7 @@ class MilkReportGenerator:
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id',
                 'closest_calvdate', 'milkdate', 'MilkAM', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
-                'testdaynumber', 'latitude', 'longitude', 'original_tag_id']
+                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id']
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
 
