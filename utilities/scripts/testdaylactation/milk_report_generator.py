@@ -135,7 +135,8 @@ class MilkReportGenerator:
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."64"')) as MilkProt,
                     core_animal.original_tag_id as original_tag_id,
                     core_farm.latitude as latitude, core_farm.longitude as longitude,
-                    core_animal_event.id as event_id, core_animal.id as animal_id
+                    core_animal_event.id as event_id, core_animal.id as animal_id,
+                    core_farm.name as farmer_name, core_farm.id as farm_id, project, birthdate
                 FROM core_animal_event
                     INNER JOIN core_animal on core_animal_event.animal_id = core_animal.id
                     INNER JOIN core_farm on core_animal.farm_id = core_farm.id
@@ -159,7 +160,7 @@ class MilkReportGenerator:
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
                                              'cattletotalowned',
                                              'tag_id', 'MilkAM', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
-                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id'])
+                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project', 'birthdate'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
@@ -176,7 +177,7 @@ class MilkReportGenerator:
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id',
                 'closest_calvdate', 'milkdate', 'MilkAM', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
-                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id']
+                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate']
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
 
