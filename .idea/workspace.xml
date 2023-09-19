@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="Cleaning up the code">
-      <change beforePath="$PROJECT_DIR$/utilities/scripts/testdaylactation/milk_report_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/utilities/scripts/testdaylactation/milk_report_generator.py" afterDir="false" />
-    </list>
+    <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="Cleaning up the code" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
