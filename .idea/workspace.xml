@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="Cleaning up the code">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ldi-data-sync.py" beforeDir="false" afterPath="$PROJECT_DIR$/ldi-data-sync.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pedigree_standard_extract.py" beforeDir="false" afterPath="$PROJECT_DIR$/pedigree_standard_extract.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/scripts/pedigree/pedigree_extract_data.sql" beforeDir="false" afterPath="$PROJECT_DIR$/utilities/scripts/pedigree/pedigree_extract_data.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
