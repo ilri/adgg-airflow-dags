@@ -25,7 +25,7 @@ default_args = {
 @dag(
     dag_id='LDI-Data-Sync',
     default_args=default_args,
-    schedule_interval="0 21 * * *",  # Every day at Midnight Nairobi Time
+    schedule_interval="0 23 * * *",  # Every day at Midnight Nairobi Time
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1  # Set the maximum number of active runs to 1
