@@ -26,33 +26,27 @@ scripts_dir = dag_folder + '/dags/utilities/scripts/reports'
 output_dir = dag_folder + '/dags/utilities/output/'
 css_file = dag_folder + '/dags/utilities/style/style.css'
 banner_img = dag_folder + '/dags/utilities/img/banner.png'
-distibution_list = Variable.get("monthly_distribution_list")
 
+distribution_list = Variable.get("default_email")
 sns.set_theme(style="white")
-
-# Define the timezone
-# timezone_nairobi = timezone('Africa/Nairobi')
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2023, 7, 1),
+    'start_date': datetime(2023, 7, 20),
+    'retries': 1,
+    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
-def get_previous_month_dates():
-    today = datetime.today()
-    first_day_of_current_month = today.replace(day=1)
-    last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
-    first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
-    return first_day_of_previous_month.date(), last_day_of_previous_month.date()
 
-start_date, end_date = get_previous_month_dates()
+start_date = date.today() - timedelta(days=1)
+end_date = date.today()
 
 dag_params = {
     'start_date': start_date,
     'end_date': end_date,
-    "distribution-list": distibution_list
+    "distribution-list": distribution_list
 }
 
 # Configure PDF options
@@ -62,15 +56,16 @@ pdf_options = {
 }
 
 @dag(
-    dag_id='Monthly-Data-Report',
+    dag_id='Data-Report',
     default_args=default_args,
-    schedule_interval="0 5 1 * *",  # First Day Of The Month at 8:00 AM
+    schedule_interval=None,
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
-    params=dag_params
+    params=dag_params,
+    access_control = {'Admin':['can_dag_read','can_dag_edit']}
 )
-def monthly_data_report():
+def data_report():
     @task(task_id="Start", provide_context=True)
     def start(**context):
 
@@ -117,20 +112,8 @@ def monthly_data_report():
 
         start_date, recipients_email = kwargs['ti'].xcom_pull()
 
-        month_and_year = ""
-        if isinstance(start_date, str):
-            date_object = datetime.strptime(start_date, '%Y-%m-%d')
-            month = date_object.strftime("%B")  # Full month name (e.g., January, February)
-            year = date_object.strftime("%Y")  # Year with century as a decimal number
-            month_and_year = f"{month} {year}"
-
-        else:
-            month = start_date.strftime("%B")  # Full month name (e.g., January, February)
-            year = start_date.strftime("%Y")  # Year with century as a decimal number
-            month_and_year = f"{month} {year}"
-
         fig_data_summary = output_dir + 'fig_data_summary_plots_' + datetime.today().strftime('%Y%m%d') + '.png'
-        report_pdf = output_dir + 'Monthly-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
+        report_pdf = output_dir + 'Data-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
         sql_data_flow = f"SELECT country ,enumerator Enumerator,event,total FROM reports.rpt_data_flow"
         df_data_flow = hook.get_pandas_df(sql_data_flow)
         df_data_flow['Enumerator'] = df_data_flow['Enumerator'].apply(lambda x: x.capitalize())
@@ -151,12 +134,15 @@ def monthly_data_report():
         sql_weight_data = f"SELECT Country, Total FROM reports.rpt_data_flow_weight"
         df_weight_data = hook.get_pandas_df(sql_weight_data)
 
+        # Summary Of Data Recording Per country
+        # df_data_flow_country_events_grouping = df_data_flow.groupby(['country', 'event']).sum().reset_index()
         # Get unique event names
 
         unique_events = df_data_flow['event'].unique()
         # Calculate the number of rows required for subplots
         num_rows = (len(unique_events) + 2) // 3  # Ceiling division
 
+        # Create subplots using matplotlib
         # Create subplots using matplotlib
         fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(12, 4 * num_rows))
 
@@ -325,6 +311,7 @@ def monthly_data_report():
         weight_median = df_weight_data_grouped['Total'].median()
         weight_average = df_weight_data_grouped['Total'].mean()
 
+
         # Create a new DataFrame with the results
         weight_summary = pd.DataFrame({
             'Country': weight_count.index,
@@ -344,11 +331,12 @@ def monthly_data_report():
         # Report Header + Title
         rpt_banner = f"<div style ='padding: 5px;'><img src='{banner_img}'/></div><hr/>"
         report_title = "<div style ='padding: 5px;'><strong>Title</strong>: Data Report</div>"
-        report_type = "<div style ='padding: 5px;'><strong>Report Type</strong>: Monthly</div>"
+        # report_type = "<div style ='padding: 5px;'><strong>Report Type</strong>:</div>"
         report_date = f"<div style ='padding: 5px;'><strong>Report Date</strong>: {now.strftime('%Y-%m-%d')}</div>"
-        report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_date} to {end_date} ({month_and_year})</div>"
-
-        report_header = rpt_banner + "<div class ='float-child-50'>" + report_title + report_type + "</div><div class ='float-child-50'>" + report_date + report_period + "</div> <hr/><br/"
+        report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>:  {start_date} to {end_date}</div>"
+        # report_period = f"<div style ='padding: 5px;'><strong>Report Period</strong>: {start_date} - {end_date}</div>"
+        # report_generated_by = "<div style ='padding: 5px;'><strong>Report Generated By</strong>: System</div><hr/>"
+        report_header = rpt_banner + "<div class ='float-child-50'>" + report_title + "</div><div class ='float-child-50'>" + report_date + report_period + "</div> <hr/><br/"
 
         html_dataflow_plots = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
 
@@ -364,21 +352,11 @@ def monthly_data_report():
         start_date, recipients_email = kwargs['ti'].xcom_pull()
         report_attachment = xcom_values['report_file']
 
-        if isinstance(start_date, str):
-            date_object = datetime.strptime(start_date, '%Y-%m-%d')
-            month = date_object.strftime("%B")  # Full month name (e.g., January, February)
-            year = date_object.strftime("%Y")  # Year with century as a decimal number
-            month_and_year = f"{month} {year}"
-        else:
-            month = start_date.strftime("%B")  # Full month name (e.g., January, February)
-            year = start_date.strftime("%Y")  # Year with century as a decimal number
-            month_and_year = f"{month} {year}"
-
         send_email_task = EmailOperator(
             task_id='Email-Reports',
             to=recipients_email,
-            subject='Monthly Data Flow Report: '+ month_and_year,
-            html_content="Hello,<p>The monthly data report is ready for review.<br/>Please note that this email is system-generated; thus, pay attention to the attached file for the detailed report.</p><p>You are receiving this email because you are subscribed to the monthly data report service</p><br/>Regards<br/> Apache Airflow",
+            subject='Data Flow Report: '+ datetime.today().strftime('%Y-%m-%d'),
+            html_content="Hello,<p>The data report is ready for review. Please find the attachment file.<br/>Please note that this email is system-generated</p><br/>Regards<br/> Apache Airflow",
             files=[report_attachment]
         )
 
@@ -411,4 +389,7 @@ def monthly_data_report():
         flush_data, trash_files()] >> finish()
 
 
-monthly_data_report()
+data_report()
+
+# References
+# 1. https://nicd.org.uk/knowledge-hub/creating-pdf-reports-with-reportlab-and-pandas

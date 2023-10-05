@@ -145,7 +145,7 @@ def pedigree_standard_extract():
         table_name = 'reports.staging_pedigree_data'
 
         # Valid Records Report
-        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'animal_id',
+        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
                          'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
                          'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude']
 
@@ -158,7 +158,7 @@ def pedigree_standard_extract():
         # Error Report
         error_output_csv = f"{output_dir}error-pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         error_output_gz = f"{error_output_csv}.gz"
-        error_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'animal_id',
+        error_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
                          'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
                          'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude', 'comments']
         error_sql_query = f"SELECT {', '.join(error_columns)} FROM {table_name} WHERE status = 0 AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"

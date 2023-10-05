@@ -26,7 +26,7 @@ scripts_dir = dag_folder + '/dags/utilities/scripts/reports'
 output_dir = dag_folder + '/dags/utilities/output/'
 css_file = dag_folder + '/dags/utilities/style/style.css'
 banner_img = dag_folder + '/dags/utilities/img/banner.png'
-distibution_list = Variable.get("weekly_distribution_list")
+distribution_list = Variable.get("weekly_distribution_list")
 
 sns.set_theme(style="white")
 
@@ -43,15 +43,15 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
-def get_last_friday():
+def get_last_sunday():
     today = datetime.today()
-    days_until_friday = (today.weekday() - 4) % 7
-    last_friday = today - timedelta(days=days_until_friday)
-    # Check if last_friday is equal to today (which means today is a Friday)
-    # If today is a Friday, then we want to get the Friday of the previous week
-    if last_friday == today:
-        last_friday -= timedelta(weeks=1)
-    return last_friday.date()
+    days_until_sunday = (today.weekday() - 6) % 7
+    last_sunday = today - timedelta(days=days_until_sunday)
+    # Check if last_sunday is equal to today (which means today is a Friday)
+    # If today is a Sunday, then we want to get the Friday of the previous week
+    if last_sunday == today:
+        last_sunday -= timedelta(weeks=1)
+    return last_sunday.date()
 
 def get_last_monday():
     today = datetime.today()
@@ -64,12 +64,12 @@ def get_last_monday():
     return last_monday.date()
 
 start_date = get_last_monday()
-end_date = get_last_friday()
+end_date = get_last_sunday()
 
 dag_params = {
     'start_date': start_date,
     'end_date': end_date,
-    "distribution-list": distibution_list
+    "distribution-list": distribution_list
 }
 
 # Configure PDF options
@@ -313,13 +313,12 @@ def weekly_data_report():
         milk_std_deviation = df_milk_data_grouped['Total'].std()
         milk_median = df_milk_data_grouped['Total'].median()
         milk_average = df_milk_data_grouped['Total'].mean()
-        milk_summation = df_milk_data_grouped['Total'].sum()
+
 
         # Create a new DataFrame with the results
         milk_summary = pd.DataFrame({
             'Country': milk_count.index,
             'Count': milk_count,
-            'Sum': milk_summation,
             'Max': milk_maximum,
             'Min': milk_minimum,
             'Median': milk_median,
@@ -341,13 +340,11 @@ def weekly_data_report():
         weight_std_deviation = df_weight_data_grouped['Total'].std()
         weight_median = df_weight_data_grouped['Total'].median()
         weight_average = df_weight_data_grouped['Total'].mean()
-        weight_summation = df_weight_data_grouped['Total'].sum()
 
         # Create a new DataFrame with the results
         weight_summary = pd.DataFrame({
             'Country': weight_count.index,
             'Count': weight_count,
-            'Sum': weight_summation,
             'Max': weight_maximum,
             'Min': weight_minimum,
             'Median': weight_median,
