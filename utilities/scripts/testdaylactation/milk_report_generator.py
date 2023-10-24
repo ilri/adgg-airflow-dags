@@ -175,7 +175,7 @@ class MilkReportGenerator:
         df_sql = df_sql[df_sql['Days In Milk'] >= 0]
         # Use the group by function in pandas to group by columns
         df_sql = df_sql.groupby(['animalid', 'milkdate', 'closest_calvdate']).first().reset_index()
-        cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id',
+        cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
                 'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate']
