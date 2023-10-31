@@ -127,6 +127,7 @@ class MilkReportGenerator:
                     JSON_UNQUOTE(JSON_EXTRACT(core_farm .additional_attributes, '$."49"')) as cattletotalowned,
                     core_animal.tag_id,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')) as MilkAM,
+                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."68"')) as MilkMidDay,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."61"')) as MilkPM,
                     (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')), 0) + 
                     COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."68"')), 0) + 
@@ -159,7 +160,7 @@ class MilkReportGenerator:
         weight_data = self.db_manager.fetch_data(weight_query)
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
                                              'cattletotalowned',
-                                             'tag_id', 'MilkAM', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
+                                             'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project', 'birthdate'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
@@ -174,8 +175,8 @@ class MilkReportGenerator:
         df_sql = df_sql[df_sql['Days In Milk'] >= 0]
         # Use the group by function in pandas to group by columns
         df_sql = df_sql.groupby(['animalid', 'milkdate', 'closest_calvdate']).first().reset_index()
-        cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id',
-                'closest_calvdate', 'milkdate', 'MilkAM', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
+        cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
+                'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
                 'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate']
         df_sql = df_sql.reindex(columns=cols)
