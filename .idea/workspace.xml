@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="Cleaning up the code">
-      <change beforePath="$PROJECT_DIR$/utilities/scripts/testdaylactation/milk_report_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/utilities/scripts/testdaylactation/milk_report_generator.py" afterDir="false" />
+    <list default="true" id="58f385af-0c19-4218-b799-72a2eadbfac6" name="Changes" comment="changes to add animalid to final report">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,7 +53,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;add__column&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;milk__mid__changes&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/mirierimogaka/Desktop/adgg-airflow-dags/utilities/scripts&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
@@ -269,7 +269,21 @@
       <option name="project" value="LOCAL" />
       <updated>1690974464213</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="milk midday changes">
+      <created>1696502788496</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1696502788496</updated>
+    </task>
+    <task id="LOCAL-00026" summary="changes to add animalid to final report">
+      <created>1698134203236</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1698134203236</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -301,6 +315,8 @@
     <MESSAGE value="changes to conform to configurations that utilized utility folder" />
     <MESSAGE value="changes to resolve param error" />
     <MESSAGE value="Cleaning up the code" />
-    <option name="LAST_COMMIT_MESSAGE" value="Cleaning up the code" />
+    <MESSAGE value="milk midday changes" />
+    <MESSAGE value="changes to add animalid to final report" />
+    <option name="LAST_COMMIT_MESSAGE" value="changes to add animalid to final report" />
   </component>
 </project>
