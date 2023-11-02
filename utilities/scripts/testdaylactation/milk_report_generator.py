@@ -137,7 +137,7 @@ class MilkReportGenerator:
                     core_animal.original_tag_id as original_tag_id,
                     core_farm.latitude as latitude, core_farm.longitude as longitude,
                     core_animal_event.id as event_id, core_animal.id as animal_id,
-                    core_farm.name as farmer_name, core_farm.id as farm_id, project, birthdate
+                    core_farm.name as farmer_name, core_farm.id as farm_id, project, birthdate,farmtype.label as farm_type
                 FROM core_animal_event
                     INNER JOIN core_animal on core_animal_event.animal_id = core_animal.id
                     INNER JOIN core_farm on core_animal.farm_id = core_farm.id
@@ -146,6 +146,7 @@ class MilkReportGenerator:
                     LEFT JOIN country_units ward ON core_animal.ward_id = ward.id
                     LEFT JOIN country_units village ON core_animal.village_id = village.id
                     LEFT JOIN core_master_list gender on core_farm.gender_code = gender.value and gender.list_type_id = 3
+                    LEFT JOIN core_master_list farmtype on core_farm.farm_type = farmtype.value and farmtype.list_type_id = 2
                 WHERE core_animal.country_id = {self.country_name}
                 """
         weight_query = f"""
@@ -161,7 +162,7 @@ class MilkReportGenerator:
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
                                              'cattletotalowned',
                                              'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
-                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project', 'birthdate'])
+                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project', 'farm_type', 'birthdate'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
@@ -178,7 +179,7 @@ class MilkReportGenerator:
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
-                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate']
+                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'farm_type', 'birthdate']
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
 
