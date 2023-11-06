@@ -47,4 +47,4 @@ FROM
  LEFT JOIN adgg_uat.core_master_list sex ON sex.value = animal.sex  AND sex.list_type_id = 3
  LEFT JOIN adgg_uat.core_country country on farm.country_id = country.id
  LEFT JOIN adgg_uat.core_organization org on farm.org_id = org.id
-WHERE farm.country_id = @country;
+WHERE animal.country_id = @country;
