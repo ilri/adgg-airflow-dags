@@ -20,15 +20,13 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2023, 9, 28),
-    # 'retries': 1,
-    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    #  'retry_delay': timedelta(minutes=5)
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
 }
 
 dag_params = {
     'log_date': log_date,
 }
-
 
 @dag(
     dag_id='Data.QA.Logger.Monthly',

@@ -39,7 +39,6 @@ default_args = {
     'start_date': datetime(2023, 7, 20),
     'retries': 1,
     # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
 
