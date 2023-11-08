@@ -162,8 +162,13 @@ def weekly_data_report():
         sql_weight_data = f"SELECT Country, Total FROM reports.rpt_data_flow_weight"
         df_weight_data = hook.get_pandas_df(sql_weight_data)
 
+
+        # Data Quality Report
+        sql_qa_data = f"SELECT c.name AS country,b.quality_check as 'Quality Check', a.total_records as 'Records', a.total_error_records as 'Error Records', a.error_rate as 'Error Rate(%)' FROM  interface_data_quality_report_data_weekly a INNER JOIN interface_data_quality_check b ON a.quality_check = b.id INNER JOIN core_country c ON a.country_id =c.id WHERE a.report_year=2023 and a.report_week=45 and deleted = 0"
+        df_qa_data = hook.get_pandas_df(sql_qa_data)
+
+
         # Summary Of Data Recording Per country
-        # df_data_flow_country_events_grouping = df_data_flow.groupby(['country', 'event']).sum().reset_index()
         # Get unique event names
 
         unique_events = df_data_flow['event'].unique()
@@ -287,6 +292,24 @@ def weekly_data_report():
         html_bottom_5_ranked_Enumerator_rpt = html_bottom_5_ranked_Enumerator_title + html_bottom_5_ranked_Enumerator_rpt
         html_combined_ranking_rpt = html_top_5_ranked_Enumerator_rpt + "<div class ='float-clear'><br/><br/></div>" + html_bottom_5_ranked_Enumerator_rpt
 
+
+        #QA
+        html_qa_rpt_header = "<br/><div><h3> Data Quality Report</h3></div>"
+        html_qa_rpt = ""
+        arr_qa_countries = df_qa_data['country'].unique()
+        for country in arr_qa_countries:
+            filtered_df_qa = df_qa_data[(df_qa_data['country'] == country)]
+            filtered_df_qa = filtered_df_qa.drop('country', axis=1)  # remove country Column
+
+            # Convert DataFrame to HTML table
+            html_qa_table = tabulate(filtered_df_qa, headers=filtered_df_qa.columns, tablefmt='html',
+                                                      showindex=False)
+            html_qa_table_sub_header = "<div><h3>" + country + "</h3></div>"
+            html_qa_rpt = html_qa_rpt + html_qa_table_sub_header + html_qa_table
+
+        html_qa_rpt = "<div class ='float-child-70'>" + html_qa_rpt_header + html_qa_rpt + "</div>"
+
+
         # animal stats
         pvt_animal_stats = df_animal_stats.pivot_table(index='Country', columns='Animal_type', values='Total',
                                                        fill_value=0)
@@ -367,7 +390,7 @@ def weekly_data_report():
 
         html_dataflow_plots = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
 
-        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt + html_Enumerator_activity_rpt
+        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt + html_qa_rpt + html_Enumerator_activity_rpt
         pdfkit.from_string(combined_html, report_pdf, options=pdf_options, css=css_file)
 
         rpt_dict = {'subplots_file': fig_data_summary, 'report_file': report_pdf}
