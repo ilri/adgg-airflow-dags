@@ -120,23 +120,6 @@ def pedigree_standard_extract():
         params={"uuid": start}
     )
 
-    #
-    # # Check Calving Age
-    # check_calving_age = MySqlOperator(
-    #     task_id='Check-Calving-Age',
-    #     mysql_conn_id='mysql_adgg_db_production',
-    #     sql='transform_lactation_check_calving_age.sql',
-    #     params={"uuid": start}
-    # )
-    #
-    # # Check Animal Type
-    # check_animal_type = MySqlOperator(
-    #     task_id='Check-Animal-Type',
-    #     mysql_conn_id='mysql_adgg_db_production',
-    #     sql='transform_lactation_check_animal_type.sql',
-    #     params={"uuid": start}
-    # )
-    #
     @task(task_id="Generate-Reports", provide_context=True)
     def generate_reports(**kwargs):
         # Fetch unique uuid
@@ -145,27 +128,18 @@ def pedigree_standard_extract():
         table_name = 'reports.staging_pedigree_data'
 
         # Valid Records Report
-        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
-                         'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
-                         'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude']
+        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'org_id',
+                         'organization_name', 'project', 'animal_id','tag_id', 'original_tag_id', 'sire_tag_id',
+                         'sire_id', 'dam_tag_id', 'dam_id', 'sex','estimated_sex','reg_date', 'birthdate', 'main_breed',
+                         'breed', 'longitude', 'latitude', 'warning', 'error']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
-        valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE status = 1  AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"
+        valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE uuid ='{unique_id}' ORDER BY animal_id, reg_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
-        # Error Report
-        error_output_csv = f"{output_dir}error-pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
-        error_output_gz = f"{error_output_csv}.gz"
-        error_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
-                         'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
-                         'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude', 'comments']
-        error_sql_query = f"SELECT {', '.join(error_columns)} FROM {table_name} WHERE status = 0 AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"
-        error_df = hook.get_pandas_df(error_sql_query)
-        error_rpt = gen_file(error_df, error_output_csv, error_output_gz)
-
-        rpt_dict = {'valid': valid_rpt, 'error': error_rpt}
+        rpt_dict = {'valid': valid_rpt}
         kwargs['ti'].xcom_push(key='my_values', value=rpt_dict)
 
     reports = generate_reports()
@@ -174,7 +148,6 @@ def pedigree_standard_extract():
     def email_reports(**kwargs):
         xcom_values = kwargs['ti'].xcom_pull(key='my_values')
         valid_rpt = xcom_values['valid']
-        error_rpt = xcom_values['error']
         recipients_email = kwargs['dag_run'].conf['email']
 
         send_email_task = EmailOperator(
@@ -182,7 +155,7 @@ def pedigree_standard_extract():
             to=recipients_email,
             subject='Pedigree Standard Extract',
             html_content="Hello, <br/> Please check the attachment to access the file extract. <br/><br/>Regards<br/> Apache Airflow",
-            files=[valid_rpt, error_rpt]
+            files=[valid_rpt]
         )
 
         return send_email_task.execute(context={})
@@ -200,11 +173,10 @@ def pedigree_standard_extract():
         # Get Return values of Generate-Reports Task
         xcom_values = kwargs['ti'].xcom_pull(key='my_values')
         valid_rpt = xcom_values['valid']
-        error_rpt = xcom_values['error']
 
         # remove the original CSV file
         os.remove(valid_rpt)
-        os.remove(error_rpt)
+
 
     @task(task_id="Finish")
     def finish():
