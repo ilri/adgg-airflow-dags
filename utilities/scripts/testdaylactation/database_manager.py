@@ -19,5 +19,15 @@ class DatabaseManager:
             cursor.execute(query)
             return cursor.fetchall()
 
+    def execute_query(self, query):
+        with self.get_cursor() as cursor:
+            cursor.execute(query)
+            self.db_connection.commit()
+
+    def execute_query(self, query):
+        with self.get_cursor() as cursor:
+            cursor.execute(query)
+            self.db_connection.commit()
+
     def close(self):
         self.db_connection.close()
