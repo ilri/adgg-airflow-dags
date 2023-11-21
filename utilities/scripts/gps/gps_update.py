@@ -19,7 +19,7 @@ class GpsUpdate:
             FROM adgg_uat.core_odk_form
             WHERE form_version LIKE "Ver 1.7" 
                 AND farm_data IS NOT NULL
-                # AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH);
+                AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH);
             """
             results = db_manager.fetch_data(query_fetch_odk_form)
 

@@ -17,7 +17,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-dag = DAG('gps_update_cron', default_args=default_args, schedule_interval='@daily')
+dag = DAG('gps_update_cron', default_args=default_args, schedule_interval='@weekly')
 
 
 def update_gps():
