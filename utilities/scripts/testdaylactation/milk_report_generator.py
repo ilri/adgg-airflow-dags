@@ -152,7 +152,7 @@ class MilkReportGenerator:
         weight_query = f"""
                 SELECT
                     animal_id,
-                    core_animal_event.event_date as weight_date,
+                    core_animal_event.event_date as weightdate,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."136"')) AS Weight,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."529"')) AS EstimatedWt,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."139"')) AS Bodyscore
@@ -164,13 +164,13 @@ class MilkReportGenerator:
                                              'cattletotalowned',
                                              'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
-        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weight_date', 'Weight', 'EstimatedWt', 'Bodyscore'])
+        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
         report_testday_lacation_df.rename(columns={'milkeventid': 'event_id'}, inplace=True)
         df_sql = report_testday_lacation_df.merge(df_sql, left_on='event_id', right_on='event_id', how='inner')
         # df_sql = weight_data_df.merge(df_sql, left_on='animal_id', right_on='animal_id', how='right')
-        df_sql = weight_data_df.merge(df_sql, on=['animal_id', 'weight_date', 'milkdate'], how='right')
+        df_sql = weight_data_df.merge(df_sql, on=['animal_id', 'weightdate', 'milkdate'], how='right')
         # Filter data as needed
         df_sql['milkdate'] = pd.to_datetime(df_sql['milkdate'], errors='coerce')
         df_sql['closest_calvdate'] = pd.to_datetime(df_sql['closest_calvdate'])
