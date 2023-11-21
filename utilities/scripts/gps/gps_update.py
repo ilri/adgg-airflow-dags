@@ -1,4 +1,3 @@
-import os
 from utilities.scripts.testdaylactation.database_manager import DatabaseManager
 import json
 
@@ -6,10 +5,6 @@ import json
 class GpsUpdate:
     @staticmethod
     def update_gps_coordinates():
-        # Get the directory of the current DAG file
-        dag_folder = os.path.dirname(os.path.abspath(__file__))
-        # Define the paths for scripts and output directories
-        scripts_dir = os.path.join(dag_folder, 'utilities', 'scripts', 'gps')
 
         try:
             # Database connection details
