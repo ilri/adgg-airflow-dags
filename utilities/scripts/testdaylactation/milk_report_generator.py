@@ -165,7 +165,7 @@ class MilkReportGenerator:
                                              'cattletotalowned',
                                              'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt','SCC',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
-        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'Weight', 'EstimatedWt', 'Bodyscore'])
+        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weight_date', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
         report_testday_lacation_df.rename(columns={'milkeventid': 'event_id'}, inplace=True)
