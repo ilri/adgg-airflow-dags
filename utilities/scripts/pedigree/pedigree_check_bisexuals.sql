@@ -1,11 +1,11 @@
 SET @uuid = '{{ params.uuid }}';
 
 -- Bisexual Check
-UPDATE reports.staging_pedigree_data a
-JOIN (SELECT id FROM adgg_uat.core_animal WHERE uuid = @uuid AND id IN (SELECT sire_id FROM adgg_uat.core_animal  WHERE sire_id IS NOT NULL)
-AND id IN (SELECT dam_id FROM adgg_uat.core_animal  WHERE dam_id IS NOT NULL)) b
-ON a.id = b.id SET a.status = 0, a.error = CONCAT(ifnull(a.error,''),' | ','Bisexual(Used As Sire & Dam)')
-WHERE a.uuid = @uuid;
+UPDATE reports.staging_pedigree_data x
+JOIN (select a.sire_id animal_id from reports.staging_pedigree_data a
+join reports.staging_pedigree_data b on a.sire_id = b.dam_id and a.uuid = @uuid and b.uuid = @uuid) y
+ON x.animal_id = y.animal_id SET x.status = 0, x.error = CONCAT(ifnull(x.error,''),' | ','Bisexual(Used A s Sire & Dam)')
+WHERE x.uuid = @uuid;
 
 
 
