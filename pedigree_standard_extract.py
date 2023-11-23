@@ -9,7 +9,6 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
 
-
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2023, 1, 1),
@@ -129,8 +128,9 @@ def pedigree_standard_extract():
 
         # Valid Records Report
         valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'org_id',
-                         'organization_name', 'project', 'animal_id','tag_id', 'original_tag_id', 'sire_tag_id',
-                         'sire_id', 'dam_tag_id', 'dam_id', 'sex','estimated_sex','reg_date', 'birthdate', 'main_breed',
+                         'organization_name', 'project', 'animal_id', 'tag_id', 'original_tag_id', 'sire_tag_id',
+                         'sire_id', 'dam_tag_id', 'dam_id', 'sex', 'estimated_sex', 'reg_date', 'birthdate',
+                         'main_breed',
                          'breed', 'longitude', 'latitude', 'warning', 'error']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
@@ -177,15 +177,14 @@ def pedigree_standard_extract():
         # remove the original CSV file
         os.remove(valid_rpt)
 
-
     @task(task_id="Finish")
     def finish():
         return "finish"
 
-    start >> stage >> [check_duplicates, check_value_date, check_sex_details,
-                       check_bisexuals, progeny_sire_dob_comparison,
-                       progeny_grand_sire_check] >> reports >> email_reports() >> [
-        flush_data, trash_files()] >> finish()
+    (start >> stage >> [check_duplicates, check_sex_details, check_bisexuals, check_value_date,
+                        progeny_grand_sire_check,
+                        progeny_sire_dob_comparison] >> reports >> email_reports() >> [flush_data, trash_files()]
+     >> finish())
 
 
 pedigree_standard_extract()
