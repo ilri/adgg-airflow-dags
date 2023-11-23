@@ -53,7 +53,7 @@ class GpsUpdate:
                         query_update_farm = f"""
                         UPDATE adgg_uat.core_farm 
                         SET latitude = '{latitude}', longitude = '{longitude}'
-                        WHERE odk_form_uuid = '{result[1]}'
+                        WHERE latitude is null  and  odk_form_uuid = '{result[1]}'
                         """
                         db_manager.execute_query(query_update_farm)
 
