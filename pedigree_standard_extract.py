@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime
 
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
@@ -71,53 +71,58 @@ def pedigree_standard_extract():
         params={"country": "{{ dag_run.conf['country']}}", "uuid": start}
     )
 
-    # Check Duplicate Records
-    check_duplicates = MySqlOperator(
-        task_id='Check-Duplicates',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_duplicates.sql',
-        params={"uuid": start}
-    )
+    @task_group(group_id='Quality-Checks',tooltip='Data Quality Validations',)
+    def quality_checks():
 
-    # Check Value Dates
-    check_value_date = MySqlOperator(
-        task_id='Check-Value-Date',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_value_date.sql',
-        params={"uuid": start}
-    )
+        # Check Duplicate Records
+        check_duplicates = MySqlOperator(
+            task_id='Check-Duplicates',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_duplicates.sql',
+            params={"uuid": start}
+        )
 
-    # Check Animal Sex
-    check_sex_details = MySqlOperator(
-        task_id='Check-Sex-Details',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_sex_details.sql',
-        params={"uuid": start}
-    )
+        # Check Value Dates
+        check_value_date = MySqlOperator(
+            task_id='Check-Value-Date',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_value_date.sql',
+            params={"uuid": start}
+        )
 
-    # Check Bisexuals
-    check_bisexuals = MySqlOperator(
-        task_id='Check-Bisexuals',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_bisexuals.sql',
-        params={"uuid": start}
-    )
+        # Check Animal Sex
+        check_sex_details = MySqlOperator(
+            task_id='Check-Sex-Details',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_sex_details.sql',
+            params={"uuid": start}
+        )
 
-    # Check Sires
-    progeny_sire_dob_comparison = MySqlOperator(
-        task_id='Compare-Progeny-Sire-DOB',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_sires.sql',
-        params={"uuid": start}
-    )
+        # Check Bisexuals
+        check_bisexuals = MySqlOperator(
+            task_id='Check-Bisexuals',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_bisexuals.sql',
+            params={"uuid": start}
+        )
 
-    # Progeny Grand Sire Comparison
-    progeny_grand_sire_check = MySqlOperator(
-        task_id='Progeny-Grand-Sire-ID-Comparison',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_grandsire.sql',
-        params={"uuid": start}
-    )
+        # Check Sires
+        progeny_sire_dob_comparison = MySqlOperator(
+            task_id='Compare-Progeny-Sire-DOB',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_sires.sql',
+            params={"uuid": start}
+        )
+
+        # Progeny Grand Sire Comparison
+        progeny_grand_sire_check = MySqlOperator(
+            task_id='Progeny-Grand-Sire-ID-Comparison',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_grandsire.sql',
+            params={"uuid": start}
+        )
+
+        check_duplicates >> check_sex_details >> check_bisexuals >> check_value_date >> progeny_grand_sire_check >> progeny_sire_dob_comparison
 
     @task(task_id="Generate-Reports", provide_context=True)
     def generate_reports(**kwargs):
@@ -181,9 +186,11 @@ def pedigree_standard_extract():
     def finish():
         return "finish"
 
-    (start >> stage >> [check_duplicates, check_sex_details, check_bisexuals, check_value_date,
-                        progeny_grand_sire_check, progeny_sire_dob_comparison] >> reports >> email_reports() >>
-     [flush_data, trash_files()] >> finish())
+    (start >> stage >> quality_checks() >> reports >> email_reports() >>[flush_data, trash_files()] >> finish())
+
+    # (start >> stage >> [check_duplicates, check_sex_details, check_bisexuals, check_value_date,
+    #                     progeny_grand_sire_check, progeny_sire_dob_comparison] >> reports >> email_reports() >>
+    #  [flush_data, trash_files()] >> finish())
 
 
 pedigree_standard_extract()
