@@ -182,9 +182,8 @@ def pedigree_standard_extract():
         return "finish"
 
     (start >> stage >> [check_duplicates, check_sex_details, check_bisexuals, check_value_date,
-                        progeny_grand_sire_check,
-                        progeny_sire_dob_comparison] >> reports >> email_reports() >> [flush_data, trash_files()]
-     >> finish())
+                        progeny_grand_sire_check, progeny_sire_dob_comparison] >> reports >> email_reports() >>
+     [flush_data, trash_files()] >> finish())
 
 
 pedigree_standard_extract()
