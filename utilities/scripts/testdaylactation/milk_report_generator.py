@@ -163,8 +163,8 @@ class MilkReportGenerator:
         data = self.db_manager.fetch_data(final_report_query)
         weight_data = self.db_manager.fetch_data(weight_query)
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
-                                             'cattletotalowned', 'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
-                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype', 'SCC'])
+                                             'cattletotalowned', 'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt', 'SCC',
+                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore', 'Heartgirth', 'BodyLength'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
