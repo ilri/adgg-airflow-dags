@@ -3,12 +3,11 @@ import os
 import uuid
 from datetime import datetime
 
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
-
 
 default_args = {
     'owner': 'airflow',
@@ -72,71 +71,59 @@ def pedigree_standard_extract():
         params={"country": "{{ dag_run.conf['country']}}", "uuid": start}
     )
 
-    # Check Duplicate Records
-    check_duplicates = MySqlOperator(
-        task_id='Check-Duplicates',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_duplicates.sql',
-        params={"uuid": start}
-    )
+    @task_group(group_id='Quality-Checks',tooltip='Data Quality Validations',)
+    def quality_checks():
 
-    # Check Value Dates
-    check_value_date = MySqlOperator(
-        task_id='Check-Value-Date',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_value_date.sql',
-        params={"uuid": start}
-    )
+        # Check Duplicate Records
+        check_duplicates = MySqlOperator(
+            task_id='Check-Duplicates',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_duplicates.sql',
+            params={"uuid": start}
+        )
 
-    # Check Animal Sex
-    check_sex_details = MySqlOperator(
-        task_id='Check-Sex-Details',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_sex_details.sql',
-        params={"uuid": start}
-    )
+        # Check Value Dates
+        check_value_date = MySqlOperator(
+            task_id='Check-Value-Date',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_value_date.sql',
+            params={"uuid": start}
+        )
 
-    # Check Bisexuals
-    check_bisexuals = MySqlOperator(
-        task_id='Check-Bisexuals',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_bisexuals.sql',
-        params={"uuid": start}
-    )
+        # Check Animal Sex
+        check_sex_details = MySqlOperator(
+            task_id='Check-Sex-Details',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_sex_details.sql',
+            params={"uuid": start}
+        )
 
-    # Check Sires
-    progeny_sire_dob_comparison = MySqlOperator(
-        task_id='Compare-Progeny-Sire-DOB',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_sires.sql',
-        params={"uuid": start}
-    )
+        # Check Bisexuals
+        check_bisexuals = MySqlOperator(
+            task_id='Check-Bisexuals',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_bisexuals.sql',
+            params={"uuid": start}
+        )
 
-    # Progeny Grand Sire Comparison
-    progeny_grand_sire_check = MySqlOperator(
-        task_id='Progeny-Grand-Sire-ID-Comparison',
-        mysql_conn_id='mysql_adgg_db_production',
-        sql='pedigree_check_grandsire.sql',
-        params={"uuid": start}
-    )
+        # Check Sires
+        progeny_sire_dob_comparison = MySqlOperator(
+            task_id='Compare-Progeny-Sire-DOB',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_sires.sql',
+            params={"uuid": start}
+        )
 
-    #
-    # # Check Calving Age
-    # check_calving_age = MySqlOperator(
-    #     task_id='Check-Calving-Age',
-    #     mysql_conn_id='mysql_adgg_db_production',
-    #     sql='transform_lactation_check_calving_age.sql',
-    #     params={"uuid": start}
-    # )
-    #
-    # # Check Animal Type
-    # check_animal_type = MySqlOperator(
-    #     task_id='Check-Animal-Type',
-    #     mysql_conn_id='mysql_adgg_db_production',
-    #     sql='transform_lactation_check_animal_type.sql',
-    #     params={"uuid": start}
-    # )
-    #
+        # Progeny Grand Sire Comparison
+        progeny_grand_sire_check = MySqlOperator(
+            task_id='Progeny-Grand-Sire-ID-Comparison',
+            mysql_conn_id='mysql_adgg_db_production',
+            sql='pedigree_check_grandsire.sql',
+            params={"uuid": start}
+        )
+
+        check_duplicates >> check_sex_details >> check_bisexuals >> check_value_date >> progeny_grand_sire_check >> progeny_sire_dob_comparison
+
     @task(task_id="Generate-Reports", provide_context=True)
     def generate_reports(**kwargs):
         # Fetch unique uuid
@@ -145,27 +132,19 @@ def pedigree_standard_extract():
         table_name = 'reports.staging_pedigree_data'
 
         # Valid Records Report
-        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
-                         'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
-                         'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude']
+        valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'org_id',
+                         'organization_name', 'project', 'animal_id', 'tag_id', 'original_tag_id', 'sire_tag_id',
+                         'sire_id', 'dam_tag_id', 'dam_id', 'sex', 'estimated_sex', 'reg_date', 'birthdate',
+                         'main_breed',
+                         'breed', 'longitude', 'latitude', 'warning', 'error']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
-        valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE status = 1  AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"
+        valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE uuid ='{unique_id}' ORDER BY animal_id, reg_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
-        # Error Report
-        error_output_csv = f"{output_dir}error-pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
-        error_output_gz = f"{error_output_csv}.gz"
-        error_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id','org_id','organization_name','project','animal_id',
-                         'tag_id', 'original_tag_id', 'sire_tag_id', 'sire_id', 'dam_tag_id', 'dam_id', 'sex',
-                         'reg_date', 'birthdate', 'main_breed', 'breed', 'longitude', 'latitude', 'comments']
-        error_sql_query = f"SELECT {', '.join(error_columns)} FROM {table_name} WHERE status = 0 AND uuid ='{unique_id}' ORDER BY animal_id, reg_date"
-        error_df = hook.get_pandas_df(error_sql_query)
-        error_rpt = gen_file(error_df, error_output_csv, error_output_gz)
-
-        rpt_dict = {'valid': valid_rpt, 'error': error_rpt}
+        rpt_dict = {'valid': valid_rpt}
         kwargs['ti'].xcom_push(key='my_values', value=rpt_dict)
 
     reports = generate_reports()
@@ -174,7 +153,6 @@ def pedigree_standard_extract():
     def email_reports(**kwargs):
         xcom_values = kwargs['ti'].xcom_pull(key='my_values')
         valid_rpt = xcom_values['valid']
-        error_rpt = xcom_values['error']
         recipients_email = kwargs['dag_run'].conf['email']
 
         send_email_task = EmailOperator(
@@ -182,7 +160,7 @@ def pedigree_standard_extract():
             to=recipients_email,
             subject='Pedigree Standard Extract',
             html_content="Hello, <br/> Please check the attachment to access the file extract. <br/><br/>Regards<br/> Apache Airflow",
-            files=[valid_rpt, error_rpt]
+            files=[valid_rpt]
         )
 
         return send_email_task.execute(context={})
@@ -200,20 +178,19 @@ def pedigree_standard_extract():
         # Get Return values of Generate-Reports Task
         xcom_values = kwargs['ti'].xcom_pull(key='my_values')
         valid_rpt = xcom_values['valid']
-        error_rpt = xcom_values['error']
 
         # remove the original CSV file
         os.remove(valid_rpt)
-        os.remove(error_rpt)
 
     @task(task_id="Finish")
     def finish():
         return "finish"
 
-    start >> stage >> [check_duplicates, check_value_date, check_sex_details,
-                       check_bisexuals, progeny_sire_dob_comparison,
-                       progeny_grand_sire_check] >> reports >> email_reports() >> [
-        flush_data, trash_files()] >> finish()
+    (start >> stage >> quality_checks() >> reports >> email_reports() >>[flush_data, trash_files()] >> finish())
+
+    # (start >> stage >> [check_duplicates, check_sex_details, check_bisexuals, check_value_date,
+    #                     progeny_grand_sire_check, progeny_sire_dob_comparison] >> reports >> email_reports() >>
+    #  [flush_data, trash_files()] >> finish())
 
 
 pedigree_standard_extract()

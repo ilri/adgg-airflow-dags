@@ -14,9 +14,9 @@ animal.farm_id,
 animal.id Animal_id,
 animal.tag_id,
 animal.original_tag_id,
-sire.tag_id sire_tag_id,
+ifnull(sire.tag_id,animal.sire_tag_id) sire_tag_id,
 animal.sire_id,
-dam.tag_id dam_tag_id,
+ifnull(dam.tag_id,animal.dam_tag_id) dam_tag_id,
 animal.dam_id,
 sex.label sex,
 animal.sex as sex_id,
@@ -47,4 +47,4 @@ FROM
  LEFT JOIN adgg_uat.core_master_list sex ON sex.value = animal.sex  AND sex.list_type_id = 3
  LEFT JOIN adgg_uat.core_country country on farm.country_id = country.id
  LEFT JOIN adgg_uat.core_organization org on farm.org_id = org.id
-WHERE farm.country_id = @country;
+WHERE animal.country_id = @country;

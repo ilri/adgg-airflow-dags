@@ -10,44 +10,37 @@ now = datetime.now()
 
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
-log_date = date.today()
+grad_date = date.today()
 
 current_file_path = os.path.abspath(__file__)  # Get the current file's path
 dag_folder = os.path.dirname(os.path.dirname(current_file_path))
-scripts_dir = dag_folder + '/dags/utilities/scripts/QA'
+scripts_dir = dag_folder + '/dags/utilities/scripts/graduation'
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2023, 9, 28),
-    # 'retries': 1,
-    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    #  'retry_delay': timedelta(minutes=5)
+    'start_date': datetime(2023, 11, 16),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
 }
-
-dag_params = {
-    'log_date': log_date,
-}
-
 
 @dag(
-    dag_id='Data.QA.Logger.Monthly',
+    dag_id='Graduation',
     default_args=default_args,
-    schedule_interval="59 20 L * *",  # Every End Month at Midnight Nairobi Time
+    schedule_interval="0 2 * * *",  # Every day at 5:00 AM
     template_searchpath=[scripts_dir],
     catchup=False,
-    max_active_runs=1,  # Set the maximum number of active runs to 1
-    params=dag_params
+    max_active_runs=1  # Set the maximum number of active runs to 1
 )
-def qa_logger_monthly():
+def graduation():
     @task(task_id="Start", provide_context=True)
     def start():
         return "start"
 
-    log_qa = MySqlOperator(
-        task_id='Log.QA.Data',
+    graduate = MySqlOperator(
+        task_id='Graduate',
         mysql_conn_id='mysql_adgg_db_production',
-        sql='monthly_data_qa_logger.sql'
+        sql='graduation.sql'
     )
 
     @task(task_id="Finish")
@@ -56,7 +49,7 @@ def qa_logger_monthly():
 
 
 
-    start() >> [log_qa] >> finish()
+    start() >> [graduate] >> finish()
 
 
-qa_logger_monthly()
+graduation()

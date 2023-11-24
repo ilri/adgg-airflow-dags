@@ -29,14 +29,12 @@ default_args = {
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1  # Set the maximum number of active runs to 1
-
-
 )
+
 def ldi_data_sync():
     @task(task_id="Start", provide_context=True)
     def start():
         return "start"
-
 
     sync_avg_milk_data = MySqlOperator(
         task_id='Sync-Milk-Yield-Data',
