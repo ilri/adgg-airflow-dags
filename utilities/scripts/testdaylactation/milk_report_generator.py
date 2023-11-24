@@ -172,7 +172,7 @@ class MilkReportGenerator:
         df_sql = report_testday_lacation_df.merge(df_sql, left_on='event_id', right_on='event_id', how='inner')
         # df_sql = weight_data_df.merge(df_sql, left_on='animal_id', right_on='animal_id', how='right')
         df_sql = weight_data_df.merge(df_sql, left_on=['animal_id', 'weightdate'], right_on=['animal_id', 'milkdate'], how='right')
-        print(df_sql)
+        print(weight_data_df)
         # Filter data as needed
         df_sql['milkdate'] = pd.to_datetime(df_sql['milkdate'], errors='coerce')
         df_sql['closest_calvdate'] = pd.to_datetime(df_sql['closest_calvdate'])
