@@ -122,8 +122,7 @@ class MilkReportGenerator:
         final_report_query = f"""
                 SELECT 
                     region.name as region, district.name as district, ward.name as ward, village.name as village,
-                    core_animal.farm_id as Farm_id ,
-                    gender.label as farmergender,
+                    core_animal.farm_id as Farm_id ,gender.label as farmergender,
                     JSON_UNQUOTE(JSON_EXTRACT(core_farm .additional_attributes, '$."49"')) as cattletotalowned,
                     core_animal.tag_id,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')) as MilkAM,
@@ -155,16 +154,17 @@ class MilkReportGenerator:
                     core_animal_event.event_date as weightdate,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."136"')) AS Weight,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."529"')) AS EstimatedWt,
-                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."139"')) AS Bodyscore
+                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."139"')) AS Bodyscore,
+                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."137"')) as Heartgirth,
+                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."138"')) as BodyLength
                 FROM core_animal_event where event_type = 6 AND core_animal_event.country_id = {self.country_name}
                 """
         data = self.db_manager.fetch_data(final_report_query)
         weight_data = self.db_manager.fetch_data(weight_query)
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
-                                             'cattletotalowned',
-                                             'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
+                                             'cattletotalowned', 'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
-        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore'])
+        weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore', 'Heartgirth', 'BodyLength'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
         report_testday_lacation_df.rename(columns={'milkeventid': 'event_id'}, inplace=True)
@@ -181,7 +181,8 @@ class MilkReportGenerator:
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
-                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype']
+                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id',
+                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'BodyLength']
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
 
