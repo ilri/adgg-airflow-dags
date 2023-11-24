@@ -134,7 +134,6 @@ class MilkReportGenerator:
                     COALESCE(JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."61"')), 0)) as TotalMilk,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."63"')) as MilkFat,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."64"')) as MilkProt,
-                    JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."66"')) as MilkSomaticCellCount,
                     core_animal.original_tag_id as original_tag_id,
                     core_farm.latitude as latitude, core_farm.longitude as longitude,
                     core_animal_event.id as event_id, core_animal.id as animal_id,
@@ -163,7 +162,7 @@ class MilkReportGenerator:
         weight_data = self.db_manager.fetch_data(weight_query)
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
                                              'cattletotalowned',
-                                             'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt', 'MilkSomaticCellCount',
+                                             'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
                                              'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore'])
         # Now join df_sql with the report_testday_lacation_df
@@ -182,7 +181,7 @@ class MilkReportGenerator:
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
-                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'MilkSomaticCellCount']
+                'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id', 'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype']
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
 
