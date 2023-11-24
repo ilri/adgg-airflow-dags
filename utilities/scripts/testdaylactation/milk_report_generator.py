@@ -170,10 +170,8 @@ class MilkReportGenerator:
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
         report_testday_lacation_df.rename(columns={'milkeventid': 'event_id'}, inplace=True)
         df_sql = report_testday_lacation_df.merge(df_sql, left_on='event_id', right_on='event_id', how='inner')
-        print(df_sql)
         # df_sql = weight_data_df.merge(df_sql, left_on='animal_id', right_on='animal_id', how='right')
         df_sql = weight_data_df.merge(df_sql, left_on=['animal_id', 'weightdate'], right_on=['animal_id', 'milkdate'], how='right')
-        print(weight_data_df)
         # Filter data as needed
         df_sql['milkdate'] = pd.to_datetime(df_sql['milkdate'], errors='coerce')
         df_sql['closest_calvdate'] = pd.to_datetime(df_sql['closest_calvdate'])
@@ -183,9 +181,9 @@ class MilkReportGenerator:
         df_sql = df_sql.groupby(['animalid', 'milkdate', 'closest_calvdate']).first().reset_index()
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
-                'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
+                'MilkProt', 'SCC', 'Heartgirth', 'BodyLength', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
                 'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id',
-                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'BodyLength', 'SCC']
+                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype']
 
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
