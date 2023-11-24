@@ -164,7 +164,7 @@ class MilkReportGenerator:
         weight_data = self.db_manager.fetch_data(weight_query)
         df_sql = pd.DataFrame(data, columns=['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender',
                                              'cattletotalowned', 'tag_id', 'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'MilkFat', 'MilkProt',
-                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype'])
+                                             'original_tag_id', 'latitude', 'longitude', 'event_id', 'animal_id', 'farmer_name', 'farm_id', 'project',  'birthdate', 'farmtype', 'SCC'])
         weight_data_df = pd.DataFrame(weight_data, columns=['animal_id', 'weightdate', 'Weight', 'EstimatedWt', 'Bodyscore', 'Heartgirth', 'BodyLength'])
         # Now join df_sql with the report_testday_lacation_df
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
@@ -183,7 +183,7 @@ class MilkReportGenerator:
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'Heartgirth', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
                 'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id',
-                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'BodyLength','SCC']
+                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'BodyLength', 'SCC']
 
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
