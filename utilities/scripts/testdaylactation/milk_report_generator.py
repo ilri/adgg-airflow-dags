@@ -152,7 +152,7 @@ class MilkReportGenerator:
         weight_query = f"""
                 SELECT
                     core_animal_event.animal_id as animal_id,
-                    core_animal_event.event_date as weightdate,
+                    DATE_FORMAT(core_animal_event.event_date, '%Y-%m-%d') as weightdate,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."136"')) AS Weight,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."529"')) AS EstimatedWt,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."139"')) AS Bodyscore,
