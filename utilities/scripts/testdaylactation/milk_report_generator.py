@@ -170,6 +170,7 @@ class MilkReportGenerator:
         df_sql['event_id'] = pd.to_numeric(df_sql['event_id'], errors='coerce')
         report_testday_lacation_df.rename(columns={'milkeventid': 'event_id'}, inplace=True)
         df_sql = report_testday_lacation_df.merge(df_sql, left_on='event_id', right_on='event_id', how='inner')
+        print(df_sql)
         # df_sql = weight_data_df.merge(df_sql, left_on='animal_id', right_on='animal_id', how='right')
         df_sql = weight_data_df.merge(df_sql, left_on=['animal_id', 'weightdate'], right_on=['animal_id', 'milkdate'], how='right')
         print(weight_data_df)
