@@ -294,7 +294,7 @@ def weekly_data_report():
 
 
         #QA
-        html_qa_rpt_header = "<br/><div><h3> Data Quality Report</h3></div>"
+        html_qa_rpt_header = "<br/><h3> Data Quality Report</h3>"
         html_qa_rpt = ""
         arr_qa_countries = df_qa_data['country'].unique()
         for country in arr_qa_countries:
@@ -307,7 +307,7 @@ def weekly_data_report():
             html_qa_table_sub_header = "<div><h3>" + country + "</h3></div>"
             html_qa_rpt = html_qa_rpt + html_qa_table_sub_header + html_qa_table
 
-        html_qa_rpt = "<div class ='float-child-70'>" + html_qa_rpt_header + html_qa_rpt + "</div>"
+        html_qa_rpt = "<div class='float-clear'><div class ='float-child-70'>" + html_qa_rpt_header + html_qa_rpt + "</div></div>"
 
 
         # animal stats
@@ -390,7 +390,7 @@ def weekly_data_report():
 
         html_dataflow_plots = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
 
-        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt + html_qa_rpt + html_Enumerator_activity_rpt
+        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt  + html_Enumerator_activity_rpt + html_qa_rpt
         pdfkit.from_string(combined_html, report_pdf, options=pdf_options, css=css_file)
 
         rpt_dict = {'subplots_file': fig_data_summary, 'report_file': report_pdf}
