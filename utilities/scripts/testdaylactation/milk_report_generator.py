@@ -181,12 +181,14 @@ class MilkReportGenerator:
         # Use the group by function in pandas to group by columns
         df_sql = df_sql.groupby(['animalid', 'milkdate', 'closest_calvdate']).first().reset_index()
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        version_number = 'TestDay Record V1.0'
         df_sql['report_created_at'] = current_date
+        df_sql['version_number'] = version_number
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'SCC', 'Heartgirth', 'BodyLength', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
                 'testdaynumber', 'latitude', 'longitude', 'original_tag_id', 'event_id',
-                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'report_created_at']
+                'farmer_name', 'farm_id', 'project', 'birthdate', 'farmtype', 'report_created_at', 'version_number']
 
         df_sql = df_sql.reindex(columns=cols)
         return df_sql
