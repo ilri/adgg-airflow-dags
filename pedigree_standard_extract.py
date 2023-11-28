@@ -130,18 +130,22 @@ def pedigree_standard_extract():
         unique_id = kwargs['ti'].xcom_pull()
 
         table_name = 'reports.staging_pedigree_data'
+        # Fetch the report_version variable value
+        report_version = Variable.get("report_version")
 
         # Valid Records Report
         valid_columns = ['country', 'region', 'district', 'ward', 'village', 'farmer_name', 'farm_id', 'org_id',
                          'organization_name', 'project', 'animal_id', 'tag_id', 'original_tag_id', 'sire_tag_id',
                          'sire_id', 'dam_tag_id', 'dam_id', 'sex', 'estimated_sex', 'reg_date', 'birthdate',
                          'main_breed',
-                         'breed', 'longitude', 'latitude', 'warning', 'error']
+                         'breed', 'longitude', 'latitude', 'warning', 'error', 'report_version']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
         valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE uuid ='{unique_id}' ORDER BY animal_id, reg_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
+        # Add 'report_version' column to the DataFrame and set its value
+        valid_df['report_version'] = report_version
         valid_rpt = gen_file(valid_df, valid_output_csv, valid_output_gz)
 
         rpt_dict = {'valid': valid_rpt}
