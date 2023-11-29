@@ -140,7 +140,7 @@ def pedigree_standard_extract():
                          'organization_name', 'project', 'animal_id', 'tag_id', 'original_tag_id', 'sire_tag_id',
                          'sire_id', 'dam_tag_id', 'dam_id', 'sex', 'estimated_sex', 'reg_date', 'birthdate',
                          'main_breed',
-                         'breed', 'longitude', 'latitude', 'warning', 'error', 'report_version']
+                         'breed', 'longitude', 'latitude', 'warning', 'error']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
