@@ -25,6 +25,7 @@ output_dir = dag_folder + '/dags/utilities/output/'
 default_email = Variable.get("default_email")
 report_version = Variable.get("report_version")
 
+
 dag_params = {
     "uuid": str(uuid.uuid4()),
     "country": 10,
@@ -33,6 +34,8 @@ dag_params = {
 
 
 def gen_file(df, filename, compressed_filename):
+    current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    df['current_date'] = current_date
     # Add report_version as a new column in the DataFrame
     df['report_version'] = report_version
 
