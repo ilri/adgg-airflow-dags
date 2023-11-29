@@ -23,6 +23,7 @@ dag_folder = os.path.dirname(os.path.dirname(current_file_path))
 scripts_dir = dag_folder + '/dags/utilities/scripts/pedigree'
 output_dir = dag_folder + '/dags/utilities/output/'
 default_email = Variable.get("default_email")
+report_version = Variable.get("report_version")
 
 dag_params = {
     "uuid": str(uuid.uuid4()),
@@ -32,6 +33,9 @@ dag_params = {
 
 
 def gen_file(df, filename, compressed_filename):
+    # Add report_version as a new column in the DataFrame
+    df['report_version'] = report_version
+
     # generate the filename using the current date and time
     df.to_csv(filename, index=False)
     # compress the CSV file using gzip
@@ -136,7 +140,7 @@ def pedigree_standard_extract():
                          'organization_name', 'project', 'animal_id', 'tag_id', 'original_tag_id', 'sire_tag_id',
                          'sire_id', 'dam_tag_id', 'dam_id', 'sex', 'estimated_sex', 'reg_date', 'birthdate',
                          'main_breed',
-                         'breed', 'longitude', 'latitude', 'warning', 'error']
+                         'breed', 'longitude', 'latitude', 'warning', 'error', 'report_version']
 
         valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
