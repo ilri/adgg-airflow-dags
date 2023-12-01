@@ -12,12 +12,16 @@ from airflow.models import Param
 
 from utilities.scripts.testdaylactation.database_manager import DatabaseManager
 from utilities.scripts.testdaylactation.milk_report_generator import MilkReportGenerator
+from utilities.scripts.adgglibrary.ReportVersionUtility import ReportVersionUtility
 
 # Get the directory of the current DAG file
 dag_folder = os.path.dirname(os.path.abspath(__file__))
 # Define the paths for scripts and output directories
 scripts_dir = os.path.join(dag_folder, 'utilities', 'scripts', 'testdaylactation')
 output_dir = os.path.join(dag_folder, 'utilities', 'output')
+
+report_name = 'Milk Report'
+version = ReportVersionUtility.get_desired_version(report_name)
 
 
 def report_generate_task(**kwargs):
@@ -133,7 +137,11 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
-with DAG('milk_report_generation_dag',
+
+dag_id = f'milk_report_generation_dag_{version}'
+dag_id = dag_id.replace('__', '_')
+
+with DAG(dag_id,
          default_args=default_args,
          description='DAG to generate the report',
          schedule_interval=None,
