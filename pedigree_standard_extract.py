@@ -8,6 +8,8 @@ from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.models import Variable
+from airflow.models import Param
+from utilities.scripts.adgglibrary.ReportVersionUtility import ReportVersionUtility
 
 default_args = {
     'owner': 'airflow',
@@ -23,21 +25,33 @@ dag_folder = os.path.dirname(os.path.dirname(current_file_path))
 scripts_dir = dag_folder + '/dags/utilities/scripts/pedigree'
 output_dir = dag_folder + '/dags/utilities/output/'
 default_email = Variable.get("default_email")
-report_version = Variable.get("report_version")
+report_name = 'Pedigree Report'
+version = ReportVersionUtility.get_desired_version(report_name)
+country_names = Variable.get("country_names", deserialize_json=True)
 
+default_email = Variable.get("default_email")
 
 dag_params = {
-    "uuid": str(uuid.uuid4()),
-    "country": 10,
-    "email": default_email
+    'uuid': str(uuid.uuid4()),
+    'email': Param(
+        default="example@example.com",
+        type="string",
+        format="idn-email",
+        minLength=5,
+        maxLength=255,
+    ),
+    'country_name': Param(
+        default="Tanzania",
+        enum=list(country_names.values()),
+    ),
 }
 
 
 def gen_file(df, filename, compressed_filename):
     current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    df['current_date'] = current_date
+    df['Extract_Datetime_UTC'] = current_date
     # Add report_version as a new column in the DataFrame
-    df['report_version'] = report_version
+    df['Version'] = version
 
     # generate the filename using the current date and time
     df.to_csv(filename, index=False)
@@ -51,8 +65,12 @@ def gen_file(df, filename, compressed_filename):
     return compressed_filename
 
 
+dag_id = f'Pedigree-Standard-Extract_{version}'
+dag_id = dag_id.replace('__', '_')
+
+
 @dag(
-    dag_id='Pedigree-Standard-Extract',
+    dag_id=dag_id,
     start_date=datetime(2021, 1, 1),
     default_args=default_args,
     template_searchpath=[scripts_dir],
