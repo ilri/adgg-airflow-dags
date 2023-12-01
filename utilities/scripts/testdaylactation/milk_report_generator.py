@@ -12,11 +12,16 @@ from utilities.scripts.adgglibrary.ReportVersionUtility import ReportVersionUtil
 
 # new
 class MilkReportGenerator:
+
     def __init__(self, db_manager, country_name, scripts_dir, output_dir):
         self.db_manager = db_manager
         self.scripts_dir = scripts_dir
         self.output_dir = output_dir
         self.country_name = country_name
+
+        self.current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.report_name = 'Milk Report'
+        self.version = ReportVersionUtility.get_desired_version(self.report_name)
 
     def fetch_data(self, query):
         attempts = 0
@@ -181,15 +186,11 @@ class MilkReportGenerator:
 
         # Use the group by function in pandas to group by columns
         df_sql = df_sql.groupby(['animalid', 'milkdate', 'closest_calvdate']).first().reset_index()
-        current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # version_number = 'TestDay Record V1.0'
-        df_sql['Extract_Datetime_UTC'] = current_date
-        # df_sql['version_number'] = version_number
-        report_name = 'Milk Report'
-        # Instantiate the local versioning class
-        desired_version = ReportVersionUtility.get_desired_version(report_name)
+        df_sql['Extract_Datetime_UTC'] = self.current_date
+        version = ReportVersionUtility.get_desired_version(self.report_name)
         # Add report_version as a new column in the DataFrame
-        df_sql['Version'] = desired_version
+        df_sql['Version'] = version
         cols = ['region', 'district', 'ward', 'village', 'Farm_id', 'farmergender', 'cattletotalowned', 'tag_id', 'animalid',
                 'closest_calvdate', 'milkdate',  'MilkAM', 'MilkMidDay', 'MilkPM', 'TotalMilk', 'Days In Milk', 'MilkFat',
                 'MilkProt', 'SCC', 'Heartgirth', 'BodyLength', 'Weight', 'EstimatedWt', 'Bodyscore', 'parity',
@@ -200,7 +201,7 @@ class MilkReportGenerator:
         return df_sql
 
     def write_to_csv(self, df_sql):
-        filename = f"testday_lactation_combined_output.csv"
+        filename = f"{self.country_name}-testday_lactation_combined_output-{self.current_date}-{self.version}.csv"
         filename = os.path.join(self.output_dir, filename)
         df_sql.to_csv(filename, index=False, encoding='utf-8-sig')
         return filename

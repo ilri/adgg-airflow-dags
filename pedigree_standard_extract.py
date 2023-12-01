@@ -163,7 +163,7 @@ def pedigree_standard_extract():
                          'main_breed',
                          'breed', 'longitude', 'latitude', 'warning', 'error']
 
-        valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}.csv"
+        valid_output_csv = f"{output_dir}pedigree-extract-{now.strftime('%Y-%m-%d')}-{unique_id}-{version}.csv"
         valid_output_gz = f"{valid_output_csv}.gz"
         valid_sql_query = f"SELECT {', '.join(valid_columns)} FROM {table_name} WHERE uuid ='{unique_id}' ORDER BY animal_id, reg_date"
         valid_df = hook.get_pandas_df(valid_sql_query)
