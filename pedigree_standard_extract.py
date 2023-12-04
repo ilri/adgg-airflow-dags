@@ -40,7 +40,7 @@ dag_params = {
         minLength=5,
         maxLength=255,
     ),
-    'country': Param(
+    'country_name': Param(
         default="Tanzania",
         enum=list(country_names.values()),
     ),
@@ -93,7 +93,7 @@ def pedigree_standard_extract():
         task_id='Stage-Data',
         mysql_conn_id='mysql_adgg_db_production',
         sql='pedigree_extract_data.sql',
-        params={"country": "{{ dag_run.conf['country']}}", "uuid": start}
+        params={"country": "{{ dag_run.conf['country_name']}}", "uuid": start}
     )
 
     @task_group(group_id='Quality-Checks',tooltip='Data Quality Validations',)
