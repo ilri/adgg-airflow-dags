@@ -1,5 +1,5 @@
 SET @uuid = '{{ params.uuid }}';
-SET @country = {{ params.country_name}};
+SET @country = {{ params.country}};
 
 INSERT INTO reports.staging_pedigree_data (country_id, country, region, district, ward, village, farmer_name, farm_id, animal_id, tag_id, original_tag_id, sire_tag_id, sire_id, dam_tag_id, dam_id, sex, sex_id, reg_date, birthdate, main_breed, breed, longitude, latitude,sire_birthdate,dam_birthdate,grand_sire_id,grand_dam_id,org_id,organization_name,project, uuid)
 SELECT
