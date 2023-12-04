@@ -40,7 +40,7 @@ dag_params = {
         minLength=5,
         maxLength=255,
     ),
-    'country_name': Param(
+    'country': Param(
         default="Tanzania",
         enum=list(country_names.values()),
     ),
