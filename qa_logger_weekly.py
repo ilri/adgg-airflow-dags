@@ -1,14 +1,12 @@
 import os
 
-from datetime import datetime, date, timedelta
+from datetime import datetime,timedelta
 from airflow.decorators import dag, task
 from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
-from calendar import monthrange
 
 now = datetime.now()
 log_year, log_week, weekday = now.isocalendar()
-
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
 current_file_path = os.path.abspath(__file__)  # Get the current file's path
@@ -19,9 +17,8 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2023, 9, 28),
-    # 'retries': 1,
-    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    #  'retry_delay': timedelta(minutes=5)
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
 }
 
 dag_params = {
@@ -31,7 +28,7 @@ dag_params = {
 @dag(
     dag_id='Data.QA.Logger.Weekly',
     default_args=default_args,
-    schedule_interval="30 4 * * 0",  # Every Sunday at 7:30 AM
+    schedule_interval="30 20 * * 6",  # Every Saturday at 23:30 PM
     template_searchpath=[scripts_dir],
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1

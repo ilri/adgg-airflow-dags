@@ -12,10 +12,6 @@ from airflow.operators.email import EmailOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import Variable
 
-# Import the timezone module
-# from airflow.utils.timezone import make_aware
-# from pytz import timezone
-
 now = datetime.now()
 hook = MySqlHook(mysql_conn_id='mysql_adgg_db_production')
 
@@ -28,18 +24,16 @@ css_file = dag_folder + '/dags/utilities/style/style.css'
 banner_img = dag_folder + '/dags/utilities/img/banner.png'
 distribution_list = Variable.get("weekly_distribution_list")
 
+#pdf report background
 sns.set_theme(style="white")
 
-# Define the timezone
-# timezone_nairobi = timezone('Africa/Nairobi')
-
+#defined default arguments for the dag
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2023, 7, 20),
-    'retries': 1,
-    # 'start_date': make_aware(now, timezone_nairobi),  # Use make_aware to set timezone
-    'retry_delay': timedelta(minutes=5)
+    # 'retries': 1,
+    # 'retry_delay': timedelta(minutes=5)
 }
 
 def get_last_sunday():
@@ -89,41 +83,39 @@ pdf_options = {
 def weekly_data_report():
     @task(task_id="Start", provide_context=True)
     def start(**context):
-
         _start_date = context["params"]["start_date"]
         _recipients_email = context["params"]["distribution-list"]
-
         return _start_date, _recipients_email
 
     start = start()
 
     # Stage Data > Initial Extractions > Data Stored In a Temporary Table
     extract_data_flow_report_data = MySqlOperator(
-        task_id='Extract-Data-Flow-Report-Data',
+        task_id='Stage-Report-Data',
         mysql_conn_id='mysql_adgg_db_production',
         sql='extract_data_flow_records.sql'
     )
 
     extract_animals_data_by_type = MySqlOperator(
-        task_id='Extract-Animal-Data-By-Type',
+        task_id='Animal-Type-Summary',
         mysql_conn_id='mysql_adgg_db_production',
         sql='extract_data_flow_animal_reg_records.sql'
     )
 
     extract_farms_data_by_type = MySqlOperator(
-        task_id='Extract-Farm-Data-By-Type',
+        task_id='Farm-Type-Summary',
         mysql_conn_id='mysql_adgg_db_production',
         sql='extract_data_flow_farm_reg_records.sql'
     )
 
     extract_milk_data_by_type = MySqlOperator(
-        task_id='Extract-Milk-Data',
+        task_id='Milk-Summary',
         mysql_conn_id='mysql_adgg_db_production',
         sql='extract_data_flow_milk_records.sql'
     )
 
     extract_weight_data_by_type = MySqlOperator(
-        task_id='Extract-Weight-Data',
+        task_id='Weight-Summary',
         mysql_conn_id='mysql_adgg_db_production',
         sql='extract_data_flow_weight_records.sql'
     )
@@ -134,16 +126,26 @@ def weekly_data_report():
         start_date, recipients_email = kwargs['ti'].xcom_pull()
 
         week_number = 0
+        year_value = 0
         if isinstance(start_date, str):
             date_object = datetime.strptime(start_date, '%Y-%m-%d')
             week_number = date_object.strftime("%U")
+            year_value = date_object.strftime("%Y")
         else:
             week_number = start_date.strftime("%U")
+            year_value = start_date.strftime("%Y")
 
-        fig_data_summary = output_dir + 'fig_data_summary_plots_' + datetime.today().strftime('%Y%m%d') + '.png'
+
+        # Define filename for the report
         report_pdf = output_dir + 'Weekly-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
+
+        # Define data summary file name
+        fig_data_summary = output_dir + 'fig_data_summary_plots_' + datetime.today().strftime('%Y%m%d') + '.png'
+
+        # Get Stats For each Enumerator
         sql_data_flow = f"SELECT country ,enumerator Enumerator,event,total FROM reports.rpt_data_flow"
         df_data_flow = hook.get_pandas_df(sql_data_flow)
+
         df_data_flow['Enumerator'] = df_data_flow['Enumerator'].apply(lambda x: x.capitalize())
 
         # Animal Reg Stats By Animal Type
@@ -164,220 +166,238 @@ def weekly_data_report():
 
 
         # Data Quality Report
-        sql_qa_data = f"SELECT c.name AS country,b.quality_check as 'Quality Check', a.total_records as 'Records', a.total_error_records as 'Error Records', a.error_rate as 'Error Rate(%)' FROM  interface_data_quality_report_data_weekly a INNER JOIN interface_data_quality_check b ON a.quality_check = b.id INNER JOIN core_country c ON a.country_id =c.id WHERE a.report_year=2023 and a.report_week=45 and deleted = 0"
+        sql_qa_data = f"SELECT c.name AS country,b.quality_check as 'Quality Check', a.total_records as 'Records', a.total_error_records as 'Error Records', a.error_rate as 'Error Rate(%)' FROM  interface_data_quality_report_data_weekly a INNER JOIN interface_data_quality_check b ON a.quality_check = b.id INNER JOIN core_country c ON a.country_id =c.id WHERE a.report_year={year_value} and a.report_week={week_number} and deleted = 0"
         df_qa_data = hook.get_pandas_df(sql_qa_data)
 
+        countries = df_data_flow['country'].unique()
 
-        # Summary Of Data Recording Per country
-        # Get unique event names
+        # Generate Data Recording Plots
+        def data_recording_plots():
+            # Get unique event names
+            unique_events = df_data_flow['event'].unique()
+            # Calculate the number of rows required for subplots
+            num_rows = (len(unique_events) + 2) // 3  # Ceiling division
 
-        unique_events = df_data_flow['event'].unique()
-        # Calculate the number of rows required for subplots
-        num_rows = (len(unique_events) + 2) // 3  # Ceiling division
+            # Create subplots using matplotlib
+            fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(12, 4 * num_rows))
 
-        # Create subplots using matplotlib
-        # Create subplots using matplotlib
-        fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(12, 4 * num_rows))
+            # Flatten the 2D array of axes into a 1D array for easy iteration
+            axes = axes.flatten()
 
-        # Flatten the 2D array of axes into a 1D array for easy iteration
-        axes = axes.flatten()
+            # Plot the bar charts using sns.barplot on each subplot
+            for i, event in enumerate(unique_events):
+                sns.barplot(x='country', y='total', data=df_data_flow[df_data_flow['event'] == event], estimator=sum,
+                            errorbar=None, ax=axes[i])
+                axes[i].set_title(f'{event}')
+                axes[i].set_xlabel('Country')
+                axes[i].set_ylabel('Total Records')
 
-        # Plot the bar charts using sns.barplot on each subplot
-        for i, event in enumerate(unique_events):
-            sns.barplot(x='country', y='total', data=df_data_flow[df_data_flow['event'] == event], estimator=sum,
-                        errorbar=None, ax=axes[i])
-            axes[i].set_title(f'{event}')
-            axes[i].set_xlabel('Country')
-            axes[i].set_ylabel('Total Records')
+            # Remove any empty subplots
+            for j in range(i + 1, num_rows * 3):
+                fig.delaxes(axes[j])
 
-        # Remove any empty subplots
-        for j in range(i + 1, num_rows * 3):
-            fig.delaxes(axes[j])
+            plt.tight_layout()
 
-        plt.tight_layout()
-        # Save the figure to a file
-        plt.savefig(fig_data_summary)
+            # Save the figure to a file
+            plt.savefig(fig_data_summary)
+            report = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
+            return report
 
         # Farm & Animal-Registration
-        html_rpt_title_reg_summary = "<br/><div><h3>Registration Summary</h3></div>"
-        df_data_flow_filtered_reg = df_data_flow[
-            df_data_flow['event'].isin(['Animal-Reg', 'Farmer-Reg'])]
-        df_data_flow_reg_grouped = df_data_flow_filtered_reg.groupby(['country', 'event']).sum()
-        pvt_data_flow_reg_pvt = df_data_flow_reg_grouped.pivot_table(index='country', columns='event',
-                                                                     values='total', fill_value=0)
-        pvt_data_flow_reg_pvt.reset_index(inplace=True)
-        html_data_flow_reg = tabulate(pvt_data_flow_reg_pvt, headers=pvt_data_flow_reg_pvt.columns, tablefmt='html',
-                                      showindex=False)
-        html_data_flow_reg = html_rpt_title_reg_summary + "<div style= 'width: 40%;'>" + html_data_flow_reg + "</div>"
+        def farm_animal_reg_data_tables():
+            df_data_flow_filtered_reg = df_data_flow[
+                df_data_flow['event'].isin(['Animal-Reg', 'Farmer-Reg'])]
+            df_data_flow_reg_grouped = df_data_flow_filtered_reg.groupby(['country', 'event']).sum()
+            pvt_data_flow_reg_pvt = df_data_flow_reg_grouped.pivot_table(index='country', columns='event',
+                                                                         values='total', fill_value=0)
+            pvt_data_flow_reg_pvt.reset_index(inplace=True)
+            summary = tabulate(pvt_data_flow_reg_pvt, headers=pvt_data_flow_reg_pvt.columns, tablefmt='html',
+                                          showindex=False)
+            report = "<br/><div><h3>Registration Summary</h3></div><div style= 'width: 40%;'>" + summary + "</div>"
+            return report
 
         # Events Monitoring Summary
-        html_rpt_title_reg_monitoring = "<br/><div><h3>Monitoring Summary</h3></div>"
-        df_data_flow_filtered_mon = df_data_flow[
-            ~df_data_flow['event'].isin(['Animal-Reg', 'Farmer-Reg'])]
-        df_data_flow_mon_grouped = df_data_flow_filtered_mon.groupby(['country', 'event']).sum()
-        pvt_data_flow_mon_pvt = df_data_flow_mon_grouped.pivot_table(index='country', columns='event',
-                                                                     values='total', fill_value=0)
-        pvt_data_flow_mon_pvt.reset_index(inplace=True)
-        html_data_flow_mon = tabulate(pvt_data_flow_mon_pvt, headers=pvt_data_flow_mon_pvt.columns, tablefmt='html',
-                                      showindex=False)
-        html_data_flow_mon = html_rpt_title_reg_monitoring + "<div>" + html_data_flow_mon + "</div>"
+        def event_monitoring_summary():
+            df_data_flow_filtered_mon = df_data_flow[
+                ~df_data_flow['event'].isin(['Animal-Reg', 'Farmer-Reg'])]
+            df_data_flow_mon_grouped = df_data_flow_filtered_mon.groupby(['country', 'event']).sum()
+            pvt_data_flow_mon_pvt = df_data_flow_mon_grouped.pivot_table(index='country', columns='event',
+                                                                         values='total', fill_value=0)
+            pvt_data_flow_mon_pvt.reset_index(inplace=True)
+            summary = tabulate(pvt_data_flow_mon_pvt, headers=pvt_data_flow_mon_pvt.columns, tablefmt='html',
+                                          showindex=False)
+            report = "<br/><div><h3>Monitoring Summary</h3></div>" + "<div>" + summary + "</div>"
+            return report
 
         # Enumerator Activity Report
-        html_Enumerator_activity_rpt_header = "<br/><div><h3> Enumerator Performance Report</h3></div>"
-        html_Enumerator_activity_rpt = ""
-        arr_distinct_countries = df_data_flow['country'].unique()
-
-        # Step 1: Melt the DataFrame to transform 'event' into rows
-        melted_data_flow = pd.melt(df_data_flow, id_vars=['country', 'Enumerator', 'event'], value_vars=['total'])
-
-        # Step 2: Create the pivot table with 'event' as the column header
-        pvt_data_flow = melted_data_flow.pivot_table(index=['country', 'Enumerator'], columns='event', values='value',
-                                                     fill_value=0)
-
-        pvt_data_flow.reset_index(inplace=True)
-
-        for country in arr_distinct_countries:
-            filtered_df = pvt_data_flow[(pvt_data_flow['country'] == country)]
-            filtered_df = filtered_df.drop('country', axis=1)  # remove country Column
-
-            # Convert DataFrame to HTML table
-            html_Enumerator_activity_table = tabulate(filtered_df, headers=filtered_df.columns, tablefmt='html',
-                                                      showindex=False)
-            html_Enumerator_activity_sub_header = "<div><h3>" + country + "</h3></div>"
-            html_Enumerator_activity_rpt = html_Enumerator_activity_rpt + html_Enumerator_activity_sub_header + html_Enumerator_activity_table
-        html_Enumerator_activity_rpt = "<div class ='float-clear'>" + html_Enumerator_activity_rpt_header + html_Enumerator_activity_rpt + "</div>"
+        def enumerator_activity_summary():           
+            combined_summary = ""            
+    
+            # Step 1: Melt the DataFrame to transform 'event' into rows
+            melted_data_flow = pd.melt(df_data_flow, id_vars=['country', 'Enumerator', 'event'], value_vars=['total'])
+    
+            # Step 2: Create the pivot table with 'event' as the column header
+            pvt_data_flow = melted_data_flow.pivot_table(index=['country', 'Enumerator'], columns='event', values='value',
+                                                         fill_value=0)
+    
+            pvt_data_flow.reset_index(inplace=True)
+    
+            for country in countries:
+                filtered_df = pvt_data_flow[(pvt_data_flow['country'] == country)]
+                filtered_df = filtered_df.drop('country', axis=1)  # remove country Column
+    
+                # Convert DataFrame to HTML table
+                country_summary = tabulate(filtered_df, headers=filtered_df.columns, tablefmt='html',
+                                                          showindex=False)
+                sub_header = "<div><h3>" + country + "</h3></div>"
+                combined_summary = combined_summary + sub_header + country_summary
+            summary = "<div class ='float-clear'><br/><div><h3> Enumerator Performance Report</h3></div>" + combined_summary + "</div>"
+            return summary
 
         # Top Ranking Enumerators
         # Define a function to get the top 5 records per group
         def get_top_5(group):
             return group.head(5)
 
-        html_top_5_ranked_Enumerator_title = "<div class ='float-clear'> <h3>Top Performing Enumerators</h3></div>"
-        html_bottom_5_ranked_Enumerator_title = "<div class ='float-clear'><h3>Least Performing Enumerators</h3></div>"
-        html_top_5_ranked_Enumerator_rpt = ""
-        html_bottom_5_ranked_Enumerator_rpt = ""
-        for country in arr_distinct_countries:
-            df_data_flow_filtered_country = df_data_flow[(df_data_flow['country'] == country)]
-            df_data_flow_enum_aggregation = df_data_flow_filtered_country.groupby(['Enumerator']).sum()
-            html_Enumerator_ranking_sub_header = "<h3>" + country + "</h3>"
-            columns_to_drop = ['country', 'event']
-            df_data_flow_enum_aggregation = df_data_flow_enum_aggregation.drop(columns=columns_to_drop)
+        def top_5_ranking_summary():
+            top_5_summary_all = ""
+            bottom_5_summary_all = ""
 
-            # top
-            df_top_5_ranked_Enumerator = df_data_flow_enum_aggregation.sort_values('total', ascending=False)
-            df_top_5_ranked_Enumerator = df_top_5_ranked_Enumerator.apply(get_top_5)
-            df_top_5_ranked_Enumerator.reset_index(inplace=True)
-            df_top_5_ranked_Enumerator['rank'] = df_top_5_ranked_Enumerator['total'].rank(ascending=False,
-                                                                                          method='dense')
-            df_top_5_ranked_Enumerator.columns = ['Enumerator', 'Records', 'Rank']
-            html_top_5_ranked_Enumerator_tab = tabulate(df_top_5_ranked_Enumerator,
-                                                        headers=df_top_5_ranked_Enumerator.columns, tablefmt='html',
-                                                        showindex=False)
-            html_top_5_ranked_Enumerator_rpt = html_top_5_ranked_Enumerator_rpt + "<div class ='float-child'>" + html_Enumerator_ranking_sub_header + html_top_5_ranked_Enumerator_tab + "</div>"
+            for country in countries:
+                df_data_flow_filtered_country = df_data_flow[(df_data_flow['country'] == country)]
+                df_data_flow_enum_aggregation = df_data_flow_filtered_country.groupby(['Enumerator']).sum()
+                columns_to_drop = ['country', 'event']
+                df_data_flow_enum_aggregation = df_data_flow_enum_aggregation.drop(columns=columns_to_drop)
 
-            # Bottom
-            df_bottom_5_ranked_Enumerator = df_data_flow_enum_aggregation.sort_values('total', ascending=True)
-            df_bottom_5_ranked_Enumerator = df_bottom_5_ranked_Enumerator.apply(get_top_5)
-            df_bottom_5_ranked_Enumerator.reset_index(inplace=True)
-            df_bottom_5_ranked_Enumerator['rank'] = df_bottom_5_ranked_Enumerator['total'].rank(ascending=False,
-                                                                                                method='dense')
-            df_bottom_5_ranked_Enumerator.columns = ['Enumerator', 'Records', 'Rank']
-            html_bottom_5_ranked_Enumerator_tab = tabulate(df_bottom_5_ranked_Enumerator,
-                                                           headers=df_bottom_5_ranked_Enumerator.columns,
-                                                           tablefmt='html',
-                                                           showindex=False)
-            html_bottom_5_ranked_Enumerator_rpt = html_bottom_5_ranked_Enumerator_rpt + "<div class ='float-child'>" + html_Enumerator_ranking_sub_header + html_bottom_5_ranked_Enumerator_tab + "</div>"
+                # top
+                df_top_5_ranked_Enumerator = df_data_flow_enum_aggregation.sort_values('total', ascending=False)
+                df_top_5_ranked_Enumerator = df_top_5_ranked_Enumerator.apply(get_top_5)
+                df_top_5_ranked_Enumerator.reset_index(inplace=True)
+                df_top_5_ranked_Enumerator['rank'] = df_top_5_ranked_Enumerator['total'].rank(ascending=False,
+                                                                                              method='dense')
+                df_top_5_ranked_Enumerator.columns = ['Enumerator', 'Records', 'Rank']
+                top_5_summary = tabulate(df_top_5_ranked_Enumerator,
+                                                            headers=df_top_5_ranked_Enumerator.columns, tablefmt='html',
+                                                            showindex=False)
+                top_5_summary_all = top_5_summary_all + "<div class ='float-child'><h3>" + country + "</h3>"+ top_5_summary + "</div>"
 
-        html_top_5_ranked_Enumerator_rpt = html_top_5_ranked_Enumerator_title + html_top_5_ranked_Enumerator_rpt
-        html_bottom_5_ranked_Enumerator_rpt = html_bottom_5_ranked_Enumerator_title + html_bottom_5_ranked_Enumerator_rpt
-        html_combined_ranking_rpt = html_top_5_ranked_Enumerator_rpt + "<div class ='float-clear'><br/><br/></div>" + html_bottom_5_ranked_Enumerator_rpt
+                # Bottom
+                df_bottom_5_ranked_Enumerator = df_data_flow_enum_aggregation.sort_values('total', ascending=True)
+                df_bottom_5_ranked_Enumerator = df_bottom_5_ranked_Enumerator.apply(get_top_5)
+                df_bottom_5_ranked_Enumerator.reset_index(inplace=True)
+                df_bottom_5_ranked_Enumerator['rank'] = df_bottom_5_ranked_Enumerator['total'].rank(ascending=False,
+                                                                                                    method='dense')
+                df_bottom_5_ranked_Enumerator.columns = ['Enumerator', 'Records', 'Rank']
+                bottom_5_summary = tabulate(df_bottom_5_ranked_Enumerator,
+                                                               headers=df_bottom_5_ranked_Enumerator.columns,
+                                                               tablefmt='html',
+                                                               showindex=False)
+                bottom_5_summary_all = bottom_5_summary_all + "<div class ='float-child'><h3>" + country + "</h3>" + bottom_5_summary + "</div>"
 
+            top_5_header = "<div class ='float-clear'> <h3>Top Performing Enumerators</h3></div>"
+            bottom_5_header = "<div class ='float-clear'><h3>Least Performing Enumerators</h3></div>"
+            report_top_5 = top_5_header + top_5_summary_all
+            report_bottom_5 = bottom_5_header + bottom_5_summary_all
+
+            report = report_top_5 + "<div class ='float-clear'><br/><br/></div>" + report_bottom_5
+            return report
 
         #QA
-        html_qa_rpt_header = "<br/><h3> Data Quality Report</h3>"
-        html_qa_rpt = ""
-        arr_qa_countries = df_qa_data['country'].unique()
-        for country in arr_qa_countries:
-            filtered_df_qa = df_qa_data[(df_qa_data['country'] == country)]
-            filtered_df_qa = filtered_df_qa.drop('country', axis=1)  # remove country Column
+        def qa_summary():
+            header = "<br/><h3> Data Quality Report</h3>"
+            summary_all = ""
+            arr_qa_countries = df_qa_data['country'].unique()
+            for country in arr_qa_countries:
+                filtered_df_qa = df_qa_data[(df_qa_data['country'] == country)]
+                filtered_df_qa = filtered_df_qa.drop('country', axis=1)  # remove country Column
 
-            # Convert DataFrame to HTML table
-            html_qa_table = tabulate(filtered_df_qa, headers=filtered_df_qa.columns, tablefmt='html',
-                                                      showindex=False)
-            html_qa_table_sub_header = "<div><h3>" + country + "</h3></div>"
-            html_qa_rpt = html_qa_rpt + html_qa_table_sub_header + html_qa_table
+                # Convert DataFrame to HTML table
+                summary = tabulate(filtered_df_qa, headers=filtered_df_qa.columns, tablefmt='html',
+                                                          showindex=False)
+                sub_header = "<div><h3>" + country + "</h3></div>"
+                summary_all = summary_all + sub_header + summary
 
-        html_qa_rpt = "<div class='float-clear'><div class ='float-child-70'>" + html_qa_rpt_header + html_qa_rpt + "</div></div>"
-
+            report = "<div class='float-clear'><div class ='float-child-70'>" + header + summary_all + "</div></div>"
+            return report
 
         # animal stats
-        pvt_animal_stats = df_animal_stats.pivot_table(index='Country', columns='Animal_type', values='Total',
-                                                       fill_value=0)
-        pvt_animal_stats.reset_index(inplace=True)
-        html_animal_stats = tabulate(pvt_animal_stats, headers=pvt_animal_stats.columns, tablefmt='html',
-                                     showindex=False)
+        def farm_animal_by_type_summary():
+            pvt_animal_stats = df_animal_stats.pivot_table(index='Country', columns='Animal_type', values='Total',
+                                                           fill_value=0)
+            pvt_animal_stats.reset_index(inplace=True)
+            animal_type_summary = tabulate(pvt_animal_stats, headers=pvt_animal_stats.columns, tablefmt='html',
+                                         showindex=False)
 
-        # Farm Stats
-        pvt_farm_stats = df_farm_stats.pivot_table(index='Country', columns='Farm_type', values='Total', fill_value=0)
-        pvt_farm_stats.reset_index(inplace=True)
-        html_farm_stats = tabulate(pvt_farm_stats, headers=pvt_farm_stats.columns, tablefmt='html',
-                                   showindex=False)
+            # Farm Stats
+            pvt_farm_stats = df_farm_stats.pivot_table(index='Country', columns='Farm_type', values='Total', fill_value=0)
+            pvt_farm_stats.reset_index(inplace=True)
+            farm_type_summary = tabulate(pvt_farm_stats, headers=pvt_farm_stats.columns, tablefmt='html',
+                                       showindex=False)
 
-        rpt_reg_by_type = "<br/><div class ='float-child-40'><h3>Categorized Animal Registration</h3>" + html_animal_stats + "</div><div class ='float-clear'><div class ='float-child'><h3><br/>Categorized Farmer Registration</h3>" + html_farm_stats + "</div><div class ='float-clear'><br/></div>"
+            report = "<br/><div class ='float-child-40'><h3>Categorized Animal Registration</h3>" + animal_type_summary + "</div><div class ='float-clear'><div class ='float-child'><h3><br/>Categorized Farmer Registration</h3>" + farm_type_summary + "</div><div class ='float-clear'><br/></div>"
+            return report
 
         # Milk stats chart
         # Group by 'Country' column
-        df_milk_data_grouped = df_milk_data.groupby('Country')
-        # Calculate count, maximum, minimum, standard deviation, median, average, and sum for each group
-        milk_count = df_milk_data_grouped['Total'].count()
-        milk_maximum = df_milk_data_grouped['Total'].max()
-        milk_minimum = df_milk_data_grouped['Total'].min()
-        milk_std_deviation = df_milk_data_grouped['Total'].std()
-        milk_median = df_milk_data_grouped['Total'].median()
-        milk_average = df_milk_data_grouped['Total'].mean()
+
+        def milk_stats():
+            df_milk_data_grouped = df_milk_data.groupby('Country')
+            # Calculate count, maximum, minimum, standard deviation, median, average, and sum for each group
+            milk_count = df_milk_data_grouped['Total'].count()
+            milk_maximum = df_milk_data_grouped['Total'].max()
+            milk_minimum = df_milk_data_grouped['Total'].min()
+            milk_std_deviation = df_milk_data_grouped['Total'].std()
+            milk_median = df_milk_data_grouped['Total'].median()
+            milk_average = df_milk_data_grouped['Total'].mean()
 
 
-        # Create a new DataFrame with the results
-        milk_summary = pd.DataFrame({
-            'Country': milk_count.index,
-            'Count': milk_count,
-            'Max': milk_maximum,
-            'Min': milk_minimum,
-            'Median': milk_median,
-            'Avg': milk_average,
-            'Std': milk_std_deviation
-        })
+            # Create a new DataFrame with the results
+            milk_summary = pd.DataFrame({
+                'Country': milk_count.index,
+                'Count': milk_count,
+                'Max': milk_maximum,
+                'Min': milk_minimum,
+                'Median': milk_median,
+                'Avg': milk_average,
+                'Std': milk_std_deviation
+            })
 
-        html_milk_summary = tabulate(milk_summary, headers=milk_summary.columns, tablefmt='html',
-                                     showindex=False)
+            summary = tabulate(milk_summary, headers=milk_summary.columns, tablefmt='html',
+                                         showindex=False)
 
-        rpt_milk_summary = "<br/><div class ='float-child-50'><h3>Milk Summary</h3>" + html_milk_summary + "</div><div class ='float-clear'>"
+            report = "<br/><div class ='float-child-50'><h3>Milk Summary</h3>" + summary + "</div><div class ='float-clear'>"
+            return report
 
         # Weight stats chart
-        df_weight_data_grouped = df_weight_data.groupby('Country')
-        # Calculate count, maximum, minimum, standard deviation, median, average, and sum for each group
-        weight_count = df_weight_data_grouped['Total'].count()
-        weight_maximum = df_weight_data_grouped['Total'].max()
-        weight_minimum = df_weight_data_grouped['Total'].min()
-        weight_std_deviation = df_weight_data_grouped['Total'].std()
-        weight_median = df_weight_data_grouped['Total'].median()
-        weight_average = df_weight_data_grouped['Total'].mean()
+        def weight_stats():
+            df_weight_data_grouped = df_weight_data.groupby('Country')
+            # Calculate count, maximum, minimum, standard deviation, median, average, and sum for each group
+            weight_count = df_weight_data_grouped['Total'].count()
+            weight_maximum = df_weight_data_grouped['Total'].max()
+            weight_minimum = df_weight_data_grouped['Total'].min()
+            weight_std_deviation = df_weight_data_grouped['Total'].std()
+            weight_median = df_weight_data_grouped['Total'].median()
+            weight_average = df_weight_data_grouped['Total'].mean()
 
-        # Create a new DataFrame with the results
-        weight_summary = pd.DataFrame({
-            'Country': weight_count.index,
-            'Count': weight_count,
-            'Max': weight_maximum,
-            'Min': weight_minimum,
-            'Median': weight_median,
-            'Avg': weight_average,
-            'Std': weight_std_deviation
-        })
+            # Create a new DataFrame with the results
+            weight_summary = pd.DataFrame({
+                'Country': weight_count.index,
+                'Count': weight_count,
+                'Max': weight_maximum,
+                'Min': weight_minimum,
+                'Median': weight_median,
+                'Avg': weight_average,
+                'Std': weight_std_deviation
+            })
 
-        html_weight_summary = tabulate(weight_summary, headers=weight_summary.columns, tablefmt='html',
-                                       showindex=False)
+            summary = tabulate(weight_summary, headers=weight_summary.columns, tablefmt='html',
+                                           showindex=False)
 
-        rpt_weight_summary = "<br/><div class ='float-child-50'><h3>Weight Summary</h3>" + html_weight_summary + "</div><div class ='float-clear'><br/></div>"
+            report = "<br/><div class ='float-child-50'><h3>Weight Summary</h3>" + summary + "</div><div class ='float-clear'><br/></div>"
+            return report
+
+        # generate Data Recording plots
+
 
         # Report Header + Title
         rpt_banner = f"<div style ='padding: 5px;'><img src='{banner_img}'/></div><hr/>"
@@ -388,10 +408,8 @@ def weekly_data_report():
 
         report_header = rpt_banner + "<div class ='float-child-50'>" + report_title + report_type + "</div><div class ='float-child-50'>" + report_date + report_period + "</div> <hr/><br/"
 
-        html_dataflow_plots = f"<div class ='page-break-before'><h3> Summary Of Data Recording </h3></div><br/><div><img src='{fig_data_summary}'/></div>"
-
-        combined_html = report_header + html_data_flow_reg + rpt_reg_by_type + html_data_flow_mon + rpt_milk_summary + rpt_weight_summary + html_dataflow_plots + html_combined_ranking_rpt  + html_Enumerator_activity_rpt + html_qa_rpt
-        pdfkit.from_string(combined_html, report_pdf, options=pdf_options, css=css_file)
+        final_report = report_header + farm_animal_reg_data_tables() + farm_animal_by_type_summary() + event_monitoring_summary() + milk_stats() + weight_stats() + data_recording_plots() + top_5_ranking_summary()  + enumerator_activity_summary() + qa_summary()
+        pdfkit.from_string(final_report, report_pdf, options=pdf_options, css=css_file)
 
         rpt_dict = {'subplots_file': fig_data_summary, 'report_file': report_pdf}
         kwargs['ti'].xcom_push(key='files', value=rpt_dict)
@@ -434,7 +452,7 @@ def weekly_data_report():
     def finish():
         return "finish"
 
-    start >> [extract_data_flow_report_data, extract_animals_data_by_type, extract_farms_data_by_type,
+    start >> extract_data_flow_report_data >> [extract_animals_data_by_type, extract_farms_data_by_type,
               extract_milk_data_by_type, extract_weight_data_by_type] >> data_flow_report() >> email_reports() >> [
         flush_data, trash_files()] >> finish()
 
