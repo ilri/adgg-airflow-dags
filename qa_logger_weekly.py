@@ -49,8 +49,6 @@ def qa_logger_weekly():
     def finish():
         return "finish"
 
-
     start() >> [log_qa] >> finish()
-
 
 qa_logger_weekly()

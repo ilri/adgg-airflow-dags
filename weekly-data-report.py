@@ -32,8 +32,8 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2023, 7, 20),
-    # 'retries': 1,
-    # 'retry_delay': timedelta(minutes=5)
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
 }
 
 def get_last_sunday():
@@ -134,7 +134,6 @@ def weekly_data_report():
         else:
             week_number = start_date.strftime("%U")
             year_value = start_date.strftime("%Y")
-
 
         # Define filename for the report
         report_pdf = output_dir + 'Weekly-Report-' + datetime.today().strftime('%Y%m%d') + '.pdf'
