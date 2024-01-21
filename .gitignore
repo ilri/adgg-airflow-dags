@@ -1,8 +1,8 @@
 __pycache__/
 .idea/
 *.pyc
-output/
-scripts/odk_media_files/.env
+utilities/output/
+utilities/scripts/odk_media_files/.env
 
 
 
