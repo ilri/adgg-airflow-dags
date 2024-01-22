@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 utilities/output/
 utilities/scripts/odk_media_files/.env
+utilities/scripts/odk_media_files/media_files/
 
 
 
