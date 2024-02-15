@@ -29,7 +29,7 @@ default_args = {
     schedule_interval="0 2 * * 0",  # utc 
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
-    tags=['clean', 'database','prod'],
+    tags=['clean', 'database','prod','admin'],
     params=dag_params
 )
 
