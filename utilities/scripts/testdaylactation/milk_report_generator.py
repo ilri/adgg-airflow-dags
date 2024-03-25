@@ -131,6 +131,8 @@ class MilkReportGenerator:
                     core_animal.farm_id as Farm_id ,gender.label as farmergender,
                     JSON_UNQUOTE(JSON_EXTRACT(core_farm .additional_attributes, '$."49"')) as cattletotalowned,
                     core_animal.tag_id,
+                    core_animal.reg_date,
+                    breed.label main_breed,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."59"')) as MilkAM,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."68"')) as MilkMidDay,
                     JSON_UNQUOTE(JSON_EXTRACT(core_animal_event.additional_attributes, '$."61"')) as MilkPM,
@@ -153,6 +155,8 @@ class MilkReportGenerator:
                     LEFT JOIN country_units village ON core_animal.village_id = village.id
                     LEFT JOIN core_master_list gender on core_farm.gender_code = gender.value and gender.list_type_id = 3
                     LEFT JOIN core_master_list farmtype on core_farm.farm_type = farmtype.value and farmtype.list_type_id = 2
+                    LEFT JOIN core_master_list breed on core_animal.main_breed = breed.value and breed.list_type_id = 8
+                    
                 WHERE core_animal.country_id = {self.country_name}
                 """
         weight_query = f"""
