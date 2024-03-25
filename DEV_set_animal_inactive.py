@@ -5,19 +5,26 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
-dagid='PROD_clean_scratchdb'
-scheduleinterval="0 2 * * 0"  # utc 
 
-tag3 = 'Housekeeping'
-tag2 = 'scheduled update'
-tag1 ='production'
+dagid='DEV_set_animal_inactive'
+scheduleinterval="0 2 * * 0"  # utc 
+sqlproc='call workdb.spm_set_animal_inactive'
+is_prod_connection = False #default to connect to dev
+
+tag4 = 'DQ'
+tag2 = 'core_animal'
+tag3 = 'scheduled update'
+tag1 ='development'
 now = datetime.now()
 
 ## Define any parameters you want to set at run time
 dag_params = {
-    'std_days': 90,
-    'keep_days': 365
+    'database_name': 'adgg',
+    'max_animal_years_old': 20,
+    'last_event_years_old': 5
+    
 }
+
 
 default_args = {
     'owner': 'airflow',
@@ -34,7 +41,7 @@ default_args = {
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
     params=dag_params,
-    tags=[tag1, tag2, tag3]
+    tags=[tag1, tag2,tag3,tag4]
 )
 
 
@@ -44,11 +51,11 @@ def run_db_proc():
         return "start"
 
     
-    sqlstmt="""call workdb.spm_ADMIN_cleanup_scratchdb({{params.std_days}}, {{params.keep_days}})"""
+    sqlstmt="""call workdb.spm_set_animal_inactive('{{params.database_name}}', {{params.max_animal_years_old}}, {{params.last_event_years_old}})"""
 
     execproc= SQLExecuteQueryOperator(     
         task_id='Execute_proc',     
-        conn_id='mysql_adgg_db_production',     
+        conn_id='mysql_adgg_db_dev',     
         sql=sqlstmt,
         autocommit=True,
         parameters=dag_params

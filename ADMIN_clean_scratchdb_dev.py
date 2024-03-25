@@ -8,6 +8,11 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 
 now = datetime.now()
 mysql_conn='mysql_adgg_db_dev'
+dagid='DEV_ADMIN_clean_scratchdb'
+
+tag3 = 'Housekeeping'
+tag2 = 'scheduled update'
+tag1 ='development'
 
 dag_params = {
     'std_days': 90,
@@ -24,13 +29,13 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 @dag(
-    dag_id='DEV_ADMIN_clean_scratchdb',
+    dag_id=dagid,
     default_args=default_args,
     schedule_interval="0 2 * * 0",  # utc 
     catchup=False,
     max_active_runs=1,  # Set the maximum number of active runs to 1
-    tags=['clean', 'database','dev','admin'],
-    params=dag_params
+    params=dag_params,
+    tags=[tag1, tag2, tag3]
 )
 
 def clean_scratchdb():
